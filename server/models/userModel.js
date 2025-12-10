@@ -25,6 +25,9 @@ export const getUsers = async () => {
 //   return result;
 // };
 
+
+
+//edit user model
 export const editUser = async (user_id, user) => {
   const query = `
     UPDATE users SET name = ?, contact_no = ?, address = ?, email = ?, role = ?, status = ?

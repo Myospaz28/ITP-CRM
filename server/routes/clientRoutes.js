@@ -3,7 +3,7 @@ import { createClient,getProductsByCategoryId} from '../controllers/clientContro
 
 const router = express.Router();
 
-router.post('/clients', createClient);
+router.post('/api/sujit', createClient);
 router.get('/products-by-cat-id/:cat_id', getProductsByCategoryId);
 
 

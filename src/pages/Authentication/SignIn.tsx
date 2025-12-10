@@ -45,7 +45,8 @@ function SignIn({ handleLogin }: { handleLogin: (auth: boolean, role: string) =>
       if (response.status === 200) {
         console.log('Sign-in successful:', data);
         toast.success('Sign-in successful! Redirecting...');
-        window.location.href = '/dashboard'; 
+        // window.location.href = '/dashboard'; 
+        handleLogin(true, data.role)
       } else {
         setError(data.message || 'Sign-in failed');
         alert(data.message || 'Sign-in failed');
@@ -62,25 +63,6 @@ function SignIn({ handleLogin }: { handleLogin: (auth: boolean, role: string) =>
 
 
 
-
-  // old code withut sessions
-  //  const submitHandler = async (event: React.FormEvent) => {
-  //   event.preventDefault();
-  //   try {
-  //     const response = await axios.post('http://localhost:3000/auth/signin', { username, password }, { withCredentials: true });
-
-  //     if (response.status === 200) {
-  //       // The back-end will manage the session, so just navigate to the dashboard
-  //       handleLogin(true, response.data.role);
-  //       navigate('/dashboard');
-  //     } else {
-  //       alert(response.data.message);
-  //     }
-  //   } catch (error) {
-  //     console.error('Login failed:', error); // Log the error for debugging
-  //     alert('Login failed. Please try again.');
-  //   }
-  // };
   
   return (
     <div>

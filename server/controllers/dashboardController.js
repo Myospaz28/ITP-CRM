@@ -1,96 +1,164 @@
-// // import db from '../database/db.js';
-// // import dashboardModel from './../models/dashboardModel.js';
-// import { totalClients, totalParts, totalProducts, completedParts, PartsInProgress ,PartsOnHold , PartsUnderReview , PendingParts } from './../models/dashboardModel.js';
-// // const { totalClients, totalParts, totalProducts, completedParts, PartsInProgress ,PartsOnHold , PartsUnderReview , PendingParts } = dashboardModel;
 
-// export const getClients = async (req, res) => {
-//     try {
-//         const clients = await totalClients();
-//         res.status(200).json(clients);
-//     } catch (error) {
-//         console.error('Error retrieving count of clients:', error);
-//         res.status(500).json({ error: 'Failed to retrieve count of clients' });
-//     }
-// };
-
-// // Add similar implementations for getParts and getProducts if needed
+import db from '../database/db.js';
 
 
-// //fetching count of Products
-// export const getProducts = async (req, res) => {
-//     try {
-//       const products = await totalProducts();
-//       res.status(200).json(products);
-//     } catch (error) {
-//       console.error('Error retrieving count of products:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of products' });
-//     }
-// };
+//get adssign leads
+export const getTotalLeadCount = async (req, res) => {
+  try {
+     const { id: userId, role } = req.session.user;
+    const query = `SELECT COUNT(*) AS lead_count FROM raw_data`;
+     const conditions = [];
+    const params = [];
 
-// //fetching count of Parts
-// export const getParts = async (req, res) => {
-//     try {
-//       const parts = await totalParts();
-//       res.status(200).json(parts);
-//     } catch (error) {
-//       console.error('Error retrieving count of parts:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of parts' });
-//     }
-// };
+    if (role === 'tele-caller') {
+      conditions.push(`a.assigned_to_user_id = ?`);
+      params.push(userId);
+    }
 
-// //fetching count of completed parts
-// export const getCompletedParts = async (req, res) => {
-//     try {
-//       const completdedParts = await completedParts();
-//       res.status(200).json(completdedParts);
-//     } catch (error) {
-//       console.error('Error retrieving count of completed parts:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of completed parts' });
-//     }
-// };
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
 
-// //fetching count of in progress parts
-// export const getPartsInProgress = async (req, res) => {
-//     try {
-//       const partsInProgress = await PartsInProgress();
-//       res.status(200).json(partsInProgress);
-//     } catch (error) {
-//       console.error('Error retrieving count of parts in progress:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of parts in progress' });
-//     }
-// };
+    query += ' GROUP BY rd.master_id';
+    const [rows] = await db.query(query);
+    console.log("lead rows: ", rows);
+    res.json(rows[0]); // returns { lead_count: number }
+  } catch (error) {
+    console.error("Error fetching leads count:", error);
+    res.status(500).json({ error: "Failed to fetch leads count" });
+  }
+};
 
-// //fetching count of on hold parts
-// export const getPartsOnHold = async (req, res) => {
-//     try {
-//       const partsOnHold = await PartsOnHold();
-//       res.status(200).json(partsOnHold);
-//     } catch (error) {
-//       console.error('Error retrieving count of parts on hold:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of parts on hold' });
-//     }
-// };
+export const getAssignedLeadCount = async (req, res) => {
+  try {
+    const { id: userId, role } = req.session.user;
+    console.log("Session user:", req.session.user);
 
-// //fetching count of under review parts
-// export const getPartsUnderReview = async (req, res) => {
-//     try {
-//       const partsUnderReview = await PartsUnderReview();
-//       res.status(200).json(partsUnderReview);
-//     } catch (error) {
-//       console.error('Error retrieving count of parts under review:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of parts under review' });
-//     }
-// };
+    let query = `
+      SELECT COUNT(*) AS assigned_count
+      FROM raw_data rd
+    `;
+    const params = [];
 
-// //fetching count of pending parts
-// export const getPendingParts = async (req, res) => {
-//     try {
-//       const Pendingparts = await PendingParts();
-//       res.status(200).json(Pendingparts);
-//     } catch (error) {
-//       console.error('Error retrieving count of pending parts:', error);
-//       res.status(500).json({ error: 'Failed to retrieve count of pending parts' });
-//     }
-// };
+    if (role === 'tele-caller') {
+      query += `
+        JOIN assignments a ON rd.assign_id = a.assign_id
+        WHERE rd.status = 'Assigned' AND a.assigned_to_user_id = ?
+      `;
+      params.push(userId);
+    } else {
+      // for admin or other roles
+      query += ` WHERE rd.status = 'Assigned'`;
+    }
 
-  
+    const [rows] = await db.query(query, params);
+    console.log("Assigned rows:", rows);
+
+    res.json(rows[0] || { assigned_count: 0 });
+  } catch (error) {
+    console.error("Error fetching assigned leads count:", error);
+    res.status(500).json({ error: "Failed to fetch assigned leads count" });
+  }
+};
+
+
+
+
+// followups 
+export const getfollowups = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS followup_count FROM followup`;
+    const [rows] = await db.query(query);
+   console.log("followup rows: ", rows);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching Followups count:", error);
+    res.status(500).json({ error: "Failed to fetch followups count" });
+  }
+}
+
+
+// meeting scheduled
+export const getMeetingScheduled = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS meeting_count FROM meeting_schedule`;
+    const [rows] = await db.query(query);
+   console.log("Meeting rows: ", rows);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching Meeting count:", error);
+    res.status(500).json({ error: "Failed to fetch Meeting count" });
+  }
+}
+
+
+// Category
+export const getcategory = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS category_count FROM category`;
+    const [rows] = await db.query(query);
+   console.log("category rows: ", rows);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching category count:", error);
+    res.status(500).json({ error: "Failed to fetch category count" });
+  }
+}
+
+
+// Category
+export const getProducts = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS product_count FROM product`;
+    const [rows] = await db.query(query);
+   console.log("product rows: ", rows);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching product count:", error);
+    res.status(500).json({ error: "Failed to fetch product count" });
+  }
+}
+
+// 
+
+
+// Category
+export const getConvertedLeads = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS converted_count FROM raw_data WHERE status= 'lead Converted'`;
+    const [rows] = await db.query(query);
+   console.log("converted rows: ", rows);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching cnverted count:", error);
+    res.status(500).json({ error: "Failed to fetch converted count" });
+  }
+}
+
+
+export const getTotalCampaignCount = async (req, res) => {
+  try {
+    const query = `SELECT COUNT(*) AS campaign_count FROM campaigns`;
+
+    const [rows] = await db.query(query);
+
+    res.json({ campaign_count: rows[0].campaign_count || 0 });
+  } catch (error) {
+    console.error("Error fetching campaign count:", error);
+    res.status(500).json({ error: "Failed to fetch campaign count" });
+  }
+};
+
+
+// Category
+// export const getConvertedLeads = async (req, res) => {
+//   try {
+//     const query = `SELECT COUNT(*) AS converted_count FROM raw_data WHERE status= 'lead Converted'`;
+//     const [rows] = await db.query(query);
+//    console.log("converted rows: ", rows);
+//     res.json(rows[0]);
+//   } catch (error) {
+//     console.error("Error fetching cnverted count:", error);
+//     res.status(500).json({ error: "Failed to fetch converted count" });
+//   }
+// }

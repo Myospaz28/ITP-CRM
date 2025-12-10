@@ -1,7 +1,11 @@
-
-
 import React, { useEffect, useState } from 'react';
-import { Route, Routes, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import {
+  Route,
+  Routes,
+  useLocation,
+  Navigate,
+  useNavigate,
+} from 'react-router-dom';
 import axios from 'axios';
 
 import Loader from './common/Loader';
@@ -9,31 +13,34 @@ import PageTitle from './components/PageTitle';
 import SignIn from './pages/Authentication/SignIn';
 import ECommerce from './pages/Dashboard/ECommerce';
 import DefaultLayout from './layout/DefaultLayout';
-import ProjectForm from './pages/Project/Create_project';
-import ShowProject from './pages/Project/Project_list';
 // import Add_client from './pages/client/Add_client';
 import AddClient from './pages/Client/Add_client';
 import Client_list from './pages/Client/Client_list';
 import Add_user from './pages/User/Add_user';
 import User_list from './pages/User/User_list';
-import TaskForm from './pages/Task/Create_task';
 import Category from './pages/Master/Category';
 import Reference from './pages/Master/Reference';
 import Product from './pages/Master/Product';
 import Followup from './pages/Marketing/Followup';
 import MarketingProduct from './pages/Marketing/MarketingProduct';
 // import View_task from './pages/Task/View_task';
-import Task_list from './pages/Task/Task_list';
-import Pending_task from './pages/Task/Pending_task';
-import Inprogress_task from './pages/Task/Inprogress_task';
-import Onhold_task from './pages/Task/Onhold_task';
-import Completed_task from './pages/Task/Completed_task';
-import UnderReview_task from './pages/Task/UnderReview_task';
-import MyBucket from './pages/Task/MyBucket';
+
 import { BASE_URL } from '../public/config.js';
+
 import Raw_data from './pages/Rawdata/Raw_data';
 import Call from './pages/Call/Call';
 import Visit from './pages/Visit/Visit';
+import Area from './pages/Master/Area';
+import CallReport from './pages/Report/CallReport';
+import UploadDocument from './pages/Master/DocumentUpload';
+
+import CampaignPage from './pages/Campaign/CampaignPage';
+import ViewCampaign from './pages/Campaign/ViewCampaign';
+import PreviewPage from './pages/Campaign/PreviewPage';
+import ResponsesPage from './pages/Campaign/ResponsesPage';
+import StudentForm from './pages/Campaign/studentForm.jsx';
+import InquiryForm from './pages/Form/InquiryForm';
+import LeadStagePage from './pages/Master/LeadStagePage';
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -53,13 +60,23 @@ function App() {
   }, []);
 
   // Check session-based authentication
+  // Check authentication except for public routes
   useEffect(() => {
+    const publicRoutes = ['/signin', '/followup/campaign/student']; // base public routes
+
+    // ✅ Allow all routes starting with /followup/campaign/student (even with :id)
+    const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
+
+    if (isPublic) return; // ⛔ Skip authentication check
+
     const checkAuth = async () => {
       try {
-        const response = await axios.get(BASE_URL + 'auth/check-session', { withCredentials: true });
+        const response = await axios.get(BASE_URL + 'auth/check-session', {
+          withCredentials: true,
+        });
         if (response.data.isAuthenticated) {
           setIsAuthenticated(true);
-          setUserRole(response.data.role); 
+          setUserRole(response.data.role);
         } else {
           setIsAuthenticated(false);
           navigate('/signin');
@@ -67,12 +84,12 @@ function App() {
       } catch (error) {
         console.error('Error checking session:', error);
         setIsAuthenticated(false);
-        navigate('/signin'); 
+        navigate('/signin');
       }
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [pathname, navigate]);
 
   // Handle login
   const handleLogin = (auth: boolean, role: string) => {
@@ -87,62 +104,76 @@ function App() {
     <Loader />
   ) : (
     <Routes>
+      {/* <Route path="/signin" element={<InquiryForm />} /> */}
       <Route path="/signin" element={<SignIn handleLogin={handleLogin} />} />
+      
+      <Route
+        path="/followup/campaign/student/:id"
+        element={
+          <>
+            <PageTitle title="Preview Campaign" />
+            <StudentForm />
+          </>
+        }
+      />
+
       {isAuthenticated ? (
         <>
           <Route
             path="/dashboard"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Dashboard" />
                 <ECommerce />
               </DefaultLayout>
             }
           />
-          <Route
-            path="/project/create-project"
-            element={
-              <DefaultLayout>
-                <PageTitle title="Create Project" />
-                <ProjectForm />
-              </DefaultLayout>
-            }
-          />
-          
-          
-          <Route
-            path="/project/project-list"
-            element={
-              <DefaultLayout>
-                <PageTitle title="Project List" />
-                <ShowProject />
-              </DefaultLayout>
-            }
-          />
+
           <Route
             path="/master/category"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="category" />
-                <Category/>
+                <Category />
               </DefaultLayout>
             }
           />
+
           <Route
             path="/master/product"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="product" />
-                <Product/>
+                <Product />
               </DefaultLayout>
             }
           />
           <Route
+            path="/upload-document/:product_id"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Upload Document" />
+                <UploadDocument />
+              </DefaultLayout>
+            }
+          />
+
+          <Route
             path="/master/reference"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="reference" />
-                <Reference/>
+                <Reference />
+              </DefaultLayout>
+            }
+          />
+
+          <Route
+            path="/master/area"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="area" />
+                <Area />
               </DefaultLayout>
             }
           />
@@ -150,179 +181,183 @@ function App() {
           <Route
             path="/user/add-user"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Add user" />
                 <Add_user />
               </DefaultLayout>
             }
           />
+
           <Route
             path="/user/user-list"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="User List" />
                 <User_list />
               </DefaultLayout>
             }
           />
-           <Route
-            path="/raw-data"
+
+          <Route
+            path="/master-data"
             element={
-              <DefaultLayout>
-                <PageTitle title="Raw Data" />
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Master Data" />
                 <Raw_data />
               </DefaultLayout>
             }
           />
+
+          <Route
+            path="/inquiry-form"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Master Data" />
+                <InquiryForm/>
+              </DefaultLayout>
+            }
+          />
+
           <Route
             path="/client/add-client"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Add Client" />
                 <AddClient />
               </DefaultLayout>
             }
           />
+
           <Route
             path="/client/client-list"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Client List" />
-                <Client_list/>
+                <Client_list />
               </DefaultLayout>
             }
           />
           <Route
-            path="/marketing-management/followup"
+            path="/followup/followup-list"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Followup Record" />
-                <Followup/>
+                <Followup />
               </DefaultLayout>
             }
           />
-            <Route
-            path="/marketing-management/marketing-products"
+          <Route
+            path="/followup/meeting-scheduled"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Followup Record" />
+                <MarketingProduct />
+              </DefaultLayout>
+            }
+          />
+          <Route
+            path="/followup/campaign-page"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Create Campaign" />
+                <CampaignPage />
+              </DefaultLayout>
+            }
+          />
+
+          <Route
+            path="/followup/view-campaign"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="View Campaign" />
+                <ViewCampaign />
+              </DefaultLayout>
+            }
+          />
+
+          <Route
+            path="/followup/campaign/responses/:id"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Campaign Responses" />
+                <ResponsesPage />
+              </DefaultLayout>
+            }
+          />
+
+          <Route
+            path="/marketing-management/followup"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Followup Record" />
+                <Followup />
+              </DefaultLayout>
+            }
+          />
+          <Route
+            path="/marketing-management/meeting-scheduled"
+            element={
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Product Marketing" />
                 <MarketingProduct />
               </DefaultLayout>
             }
           />
-           <Route
+          <Route
             path="/marketing-management/meeting-scheduled"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Meeting Schedule" />
                 <User_list />
               </DefaultLayout>
             }
           />
-           <Route
+          <Route
             path="/call"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Call" />
-                <Call/>
+                <Call />
               </DefaultLayout>
             }
           />
           <Route
             path="/visit"
             element={
-              <DefaultLayout>
+              <DefaultLayout userRole={userRole}>
                 <PageTitle title="Visit" />
-                <Visit/>
-              </DefaultLayout>
-            }
-          />         
-          <Route
-            path="/task/create-task"
-            element={
-              <DefaultLayout>
-                <PageTitle title="Create Parts" />
-                <TaskForm />
+                <Visit />
               </DefaultLayout>
             }
           />
           <Route
-            path="/task/task-list"
+            path="/followup/campaign/preview/:id"
             element={
-              <DefaultLayout>
-                <PageTitle title="View Parts" />
-                <Task_list />
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Preview Campaign" />
+                <PreviewPage />
               </DefaultLayout>
             }
           />
           <Route
-            path="/part/pending-task"
+            path="/master/leadstage"
             element={
-              <DefaultLayout>
-                <PageTitle title="Pending Parts" />
-                <Pending_task />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/part/inProgress-task"
-            element={
-              <DefaultLayout>
-                <PageTitle title="InProgress Parts" />
-                <Inprogress_task />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/part/onHold-task"
-            element={
-              <DefaultLayout>
-                <PageTitle title="On Hold Parts" />
-                <Onhold_task />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/part/completed-task"
-            element={
-              <DefaultLayout>
-                <PageTitle title="Completed Parts" />
-                <Completed_task />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/part/underReview-task"
-            element={
-              <DefaultLayout>
-                <PageTitle title="Under Review Parts" />
-                <UnderReview_task />
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Lead Stage" />
+                <LeadStagePage />
               </DefaultLayout>
             }
           />
 
           <Route
-            path="myBucket/bucket-list"
+            path="/report/call"
             element={
-            <DefaultLayout>
-              <PageTitle title="My Bucket" />
-              <MyBucket />
-            </DefaultLayout>
-          }
-        />
-
-       {/* Part list  */}
-         <Route
-            path="part/part-list"
-          element={
-            <>
-              <PageTitle title="PDM" />
-              <Task_list />
-            </>
-          }
-        />
-
-
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Report" />
+                <CallReport />
+              </DefaultLayout>
+            }
+          />
         </>
       ) : (
         <Route path="/signin" element={<Navigate to="/signin" />} />
@@ -332,39 +367,6 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import { useEffect, useState } from 'react';
 // import { Route, Routes, useLocation } from 'react-router-dom';
@@ -421,8 +423,7 @@ export default App;
 //           }
 //         />
 
-
-//         {/* dashboard 
+//         {/* dashboard
 //         <Route
 //             path="/dashboard"
 //           element={
@@ -443,8 +444,6 @@ export default App;
 //             </>
 //           }
 //         />
-
-
 
 //         {/* project list  */}
 //         <Route
@@ -468,8 +467,6 @@ export default App;
 //           }
 //         />
 
-
-
 //         {/* add client  */}
 //         <Route
 //             path="/client/add-client"
@@ -480,8 +477,6 @@ export default App;
 //             </>
 //           }
 //         />
-
-
 
 //         {/* client list  */}
 //         <Route
@@ -494,8 +489,6 @@ export default App;
 //           }
 //         />
 
-
-
 //         {/* add user  */}
 //         <Route
 //             path="/user/add-user"
@@ -506,8 +499,6 @@ export default App;
 //             </>
 //           }
 //         />
-
-
 
 //         {/* user list  */}
 //         <Route
@@ -520,8 +511,6 @@ export default App;
 //           }
 //         />
 
-
-
 //         {/* create Part  */}
 //         <Route
 //             path="part/create-part"
@@ -533,9 +522,6 @@ export default App;
 //           }
 //         />
 
-
-
-
 //         {/* Part list  */}
 //         <Route
 //             path="part/part-list"
@@ -546,9 +532,6 @@ export default App;
 //             </>
 //           }
 //         />
-        
-
-
 
 //         {/* view task */}
 //         {/* <Route
@@ -560,9 +543,6 @@ export default App;
 //             </>
 //           }
 //         /> */}
-        
-
-
 
 //         <Route
 //           path="/auth/signin"
@@ -588,14 +568,3 @@ export default App;
 // }
 
 // export default App;
-
-
-
-
-
-
-
-
-
-
-

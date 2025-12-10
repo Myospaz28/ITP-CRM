@@ -43,10 +43,10 @@ const SelectRoleDepartment: React.FC<SelectRoleDepartmentProps> = ({
             <option value="team lead" className="text-body dark:text-bodydark">
               Team Lead
             </option>
-            <option value="designer" className="text-body dark:text-bodydark">
+            <option value="tele-caller" className="text-body dark:text-bodydark">
               Tele-Caller
             </option>
-            <option value="designer" className="text-body dark:text-bodydark">
+            <option value="field-officer" className="text-body dark:text-bodydark">
               Field Officer
             </option>
           </select>

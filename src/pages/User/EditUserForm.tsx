@@ -1,13 +1,12 @@
 // components/EditUserForm.tsx
 import React, { useState, useEffect } from "react";
-import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import SelectRoleDepartment from "../../components/Forms/SelectGroup/SelectRoleDepartment";
 import './popform.css';
 import { BASE_URL } from '../../../public/config.js';
 
 type EditUserFormProps = {
   user: {
-    id: number;
+    user_id: number;
     name: string;
     contact: string;
     email: string;
@@ -20,62 +19,75 @@ type EditUserFormProps = {
 };
 
 const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onSave }) => {
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    contact: user?.contact || "", 
-    address: user?.address || "", 
-    role: user?.role || "",
-    status: user?.status || "active",
-  });
+// In state initialization and useEffect, include id
+const [formData, setFormData] = useState({
+  user_id: user?.user_id || null, // Ensure id is included
+  name: user?.name || "",
+  email: user?.email || "",
+  contact: user?.contact || "", 
+  address: user?.address || "", 
+  role: user?.role || "",
+  status: user?.status || "active",
+});
 
-  useEffect(() => {
-    if (user) setFormData(user);
-  }, [user]);
+useEffect(() => {
+  if (user) {
+    setFormData({
+      user_id: user.user_id, // Ensure id is set correctly
+      name: user.name,
+      email: user.email,
+      contact: user.contact,
+      address: user.address,
+      role: user.role,
+      status: user.status,
+    });
+  }
+}, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+// In handleSubmit
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-  const handleRoleChange = (role: string) => {
-    setFormData({ ...formData, role });
-  };
+  const updatedUser  = { ...formData };
+  console.log("Updated User Data:", updatedUser ); // Log the updated user data
 
-  const handleStatusChange = (status: string) => {
-    setFormData({ ...formData, status });
-  };
+  try {
+    const response = await fetch(BASE_URL + `api/users/${formData.user_id}`, { // Use formData.id
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedUser ),
+    });
+
+    if (!response.ok) throw new Error("Failed to update user");
+
+    const data = await response.json();
+    console.log("User  updated successfully:", data);
+
+    onSave(updatedUser );
+    onClose();
+  } catch (error) {
+    console.error("Error updating user:", error);
+  }
+};
 
 
+useEffect(() => {
+  if (user) setFormData(user);
+}, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
+};
 
-    const updatedUser = { ...user, ...formData };
+const handleRoleChange = (role: string) => {
+  setFormData({ ...formData, role });
+};
 
-    try {
-      const response = await fetch(BASE_URL + `api/users/${user?.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedUser),
-      });
+const handleStatusChange = (status: string) => {
+  setFormData({ ...formData, status });
+};
 
-      if (!response.ok) {
-        throw new Error("Failed to update user");
-      }
-
-      const data = await response.json();
-      console.log("User updated successfully:", data);
-
-      onSave(updatedUser);
-      onClose(); 
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
-  };
-  
   return (
     <div className="popup-overlay">
       <div className="popup-content rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6.5">

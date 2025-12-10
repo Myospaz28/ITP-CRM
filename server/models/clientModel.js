@@ -25,7 +25,7 @@ export const addClient = async (clientData) => {
       contact_person_name,
       contact_person_number,
       contact_person_email,
-      user_id
+      created_by_user
     ) VALUES (?, ?, ?, ?, ?, ?)
   `;
 
@@ -66,7 +66,7 @@ export const addFollowup = async (clientData) => {
       followup_date,
       remark,
       status,
-      user_id
+      created_by_user
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
@@ -112,7 +112,7 @@ export const addMarketing = async (clientData) => {
       status,
       mode,
       reference,
-      user_id
+      created_by_user
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 

@@ -12,10 +12,11 @@ router.post('/users', createUser);
 router.get('/users', getUsers);
 
 //update user 
-router.put('/users/:id', updateUser);
+router.put('/users/:user_id', updateUser );
+
 
 // delete user route
-router.delete('/users/:id', removeUser);
+router.delete('/users/:user_id', removeUser);
 
 
 export default router;

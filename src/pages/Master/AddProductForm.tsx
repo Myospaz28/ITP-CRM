@@ -16,7 +16,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
   onClose,
   onProductAdded,
 }) => {
-  const [formData, setFormData] = useState({ product_name: "", cat_id: "" });
+  const [formData, setFormData] = useState({ product_name: "", cat_id: "", product_description: "" });
   const [feedback, setFeedback] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -44,7 +44,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.cat_id || !formData.product_name) {
+    if (!formData.cat_id || !formData.product_name || !formData.product_description) {
       setFeedback("Please fill in all fields.");
       return;
     }
@@ -53,6 +53,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
       // Send the form data to the backend
       const response = await axios.post(BASE_URL + "api/product", formData, {
         headers: { "Content-Type": "application/json" },
+        withCredentials: true, // <- this enables sending cookies
       });
 
       setFeedback("Product added successfully!");
@@ -63,7 +64,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
       }, 3000);
 
       // Reset the form
-      setFormData({ product_name: "", cat_id: "" });
+      setFormData({ product_name: "", cat_id: "", product_description:"" });
     } catch (error) {
       console.error("Error adding product:", error);
       setFeedback("Error occurred. Please try again.");
@@ -101,6 +102,15 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
               </option>
             ))}
           </select>
+          <label className="block text-sm font-medium mb-2">Product Description</label>
+          <textarea
+            name="product_description"
+            value={formData.product_description}
+            onChange={handleChange}
+            placeholder="Enter product description"
+            className="border w-full p-2 rounded mb-4"
+            required
+          />
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -130,97 +140,3 @@ export default AddProductForm;
 
 
 
-
-
-
-// import React, { useState } from "react";
-// import { BASE_URL } from "../../../public/config.js";
-// import axios from "axios";
-
-// interface AddProductFormProps {
-//   onClose: () => void;
-//   onProductAdded: () => void;
-// }
-
-// const AddProductForm: React.FC<AddProductFormProps> = ({
-//   onClose,
-//   onProductAdded,
-// }) => {
-//   const [formData, setFormData] = useState({ product_name: "" });
-//   const [feedback, setFeedback] = useState("");
-//   const [filteredData, setFilteredData] = useState([]);
-
-//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const { name, value } = e.target;
-//     setFormData({ ...formData, [name]: value });
-//   };
-
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     try {
-//       await axios.post(BASE_URL + "api/product", formData, {
-//         headers: { "Content-Type": "application/json" },
-//       });
-
-//       setFeedback("Product added successfully!");
-//       setTimeout(() => {
-//         setFeedback("");
-//         onClose();
-//         onProductAdded();
-//       }, 3000);
-//       setFormData({ product_name: "" });
-//     } catch (error) {
-//       console.error("Error adding product:", error);
-//       setFeedback("Error occurred. Please try again.");
-//     }
-//   };
-
-//   return (
-//     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-//       <div className="bg-white rounded-md p-6 w-1/3 shadow-lg">
-//         <h3 className="text-lg font-semibold mb-4">Add New Product</h3>
-//         {feedback && <p className="text-green-500">{feedback}</p>}
-//         <form onSubmit={handleSubmit}>
-//           <label className="block text-sm font-medium mb-2">Product Name</label>
-//           <input
-//             type="text"
-//             name="product_name"
-//             value={formData.product_name}
-//             onChange={handleChange}
-//             placeholder="Enter product name"
-//             className="border w-full p-2 rounded mb-4"
-//             required
-//           />
-//            {filteredData.length > 0 ? (
-//             filteredData.map((category) => (
-//             <select name="selectCategory" id="">
-//                 <option> {category.cat_name}</option>
-//             </select>
-//             ))
-//             ) : (
-//             <select>
-//                 <option value="No categories found">No categories found</option> 
-//             </select>
-//             )}
-//           <div className="flex justify-end gap-2">
-//             <button
-//               type="button"
-//               onClick={onClose}
-//               className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-//             >
-//               Save
-//             </button>
-//           </div>
-//         </form>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AddProductForm;

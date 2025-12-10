@@ -7,7 +7,7 @@ import { BASE_URL } from '../../../public/config.js';
 
 const User_list = () => {
   type User = {
-    id: number;
+    user_id: number;
     name: string;
     contact: string;
     email: string;
@@ -29,8 +29,11 @@ const User_list = () => {
         if (!response.ok) throw new Error("Network response was not ok");
 
         const data = await response.json();
+        console.log("Fetched users data:", data);
+   
+        
         const formattedData = data.map((user: any) => ({
-          id: user.id,
+          user_id: user.user_id,
           name: user.name,
           role: user.role,
           email: user.email,
@@ -38,7 +41,7 @@ const User_list = () => {
           contact: user.contact_no, 
           status: user.status,
         }));
-
+        
         setUsers(formattedData);
         setFilteredData(formattedData);
       } catch (error) {
@@ -61,9 +64,11 @@ const User_list = () => {
 
   // Handle opening the edit popup
   const openEditPopup = (user: User) => {
-    setCurrentEditUser(user);
+    console.log("Opening edit popup for user:", user); // Add this line to check the user object
+    setCurrentEditUser (user);
     setIsEditPopupOpen(true);
   };
+  
 
   // Handle closing the edit popup
   const closeEditPopup = () => {
@@ -76,12 +81,12 @@ const User_list = () => {
     try {
       // Map fields to match backend
       const payload = {
-        ...updatedUser,
-        contact_no: updatedUser.contact, 
+        ...updatedUser ,
+        contact_no: updatedUser .contact,
       };
 
       const response = await fetch(
-        BASE_URL + `api/users/${updatedUser.id}`,
+        BASE_URL + `api/users/${updatedUser.user_id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -93,10 +98,10 @@ const User_list = () => {
 
       // Update frontend data
       setUsers((prevUsers) =>
-        prevUsers.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+        prevUsers.map((user) => (user.user_id === updatedUser.user_id ? updatedUser : user))
       );
       setFilteredData((prevFiltered) =>
-        prevFiltered.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+        prevFiltered.map((user) => (user.user_id === updatedUser.user_id ? updatedUser : user))
       );
 
       alert("User updated successfully!");
@@ -108,19 +113,19 @@ const User_list = () => {
   };
 
   // Handle deleting a user
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (user_id: number) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(BASE_URL + `api/users/${id}`, {
+      const response = await fetch(BASE_URL + `api/users/${user_id}`, {
         method: "DELETE",
       });
 
       if (!response.ok) throw new Error("Failed to delete user");
 
       // Update frontend data
-      const updatedUsers = users.filter((user) => user.id !== id);
+      const updatedUsers = users.filter((user) => user.user_id !== user_id);
       setUsers(updatedUsers);
       setFilteredData(updatedUsers);
 
@@ -169,7 +174,7 @@ const User_list = () => {
           <tbody>
             {filteredData.length > 0 ? (
               filteredData.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.user_id}>
                   <td className="border-b border-[#eee] py-3 px-0 pl-2 dark:border-strokedark xl:pl-11">
                     <h5 className="font-medium text-black dark:text-white">
                       {user.name}
@@ -205,7 +210,7 @@ const User_list = () => {
                       </button>
                       <button
                         className="inline-flex items-center justify-center rounded-md py-1 px-3 text-center text-white hover:bg-opacity-75 bg-black"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDelete(user.user_id)}
                       >
                         <FontAwesomeIcon icon={faTrash} className="text-white" />
                       </button>

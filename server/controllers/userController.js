@@ -58,15 +58,15 @@ export const getUsers = async (req, res) => {
 
 
 //update user
-export const updateUser = async (req, res) => {
-  // console.log("req.params:", req.params);
-  const { user_id } = req.params;
-  const {  name, contact,address, email, role, status } = req.body;
-  // console.log("Updating user with data:", { user_id, name, email, contact, address, role, status, user_id });
+export const updateUser  = async (req, res) => {
+  const { user_id } = req.params; // Ensure this matches the route parameter
 
+  console.log("user_id :", user_id)
+  const { name, contact, address, email, role, status } = req.body;
+  console.log("Updating user with data:", { user_id, name, contact, address, email, role, status });
   try {
-    const result = await editUser(user_id, { name, contact, email, address, role, status});
-    res.json({ message: 'User updated successfully', result });
+    const result = await editUser (user_id, { name, contact, address, email, role, status });
+    res.json({ message: 'User  updated successfully', result });
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });

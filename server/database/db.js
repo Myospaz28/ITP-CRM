@@ -4,20 +4,22 @@ import mysql from 'mysql2/promise';
 
 // Create a connection pool
 
+// const db = mysql.createPool({
+//   host: '127.0.0.1',
+//   user: 'root',
+//   password: '',
+//   database: 'db_mms',
+//     port: 3308,
+// });
+
 const db = mysql.createPool({
   host: '127.0.0.1',
   user: 'root',
-  password: 'root',
-  database: 'db_mms',
+  password: '',
+  database: 'dzmbjxtk_itp_crm_lead',
+  // port: 3308,
 });
 
-
-// const db = mysql.createPool({
-//   host: '127.0.0.1',
-//   user: 'dzmbjxtk_pdm_new',
-//   password: 'dzmbjxtk_pdm_new',
-//   database: 'dzmbjxtk_pdm_new',
-// });
 
 // Connect to the database
 const connectToDatabase = async () => {
@@ -40,44 +42,49 @@ export default db;
 
 
 
-// import mysql from 'mysql2';
-
-// const db = mysql.createConnection({
-//   host: 'localhost',
-//   user: 'root',
-//   password: 'root',
-//   database: 'pdm_database'
-// });
-
-// db.connect(err => {
-//   if (err) {
-//     console.error('Error connecting to the MySQL database:', err);
-//     return;
-//   }
-//   console.log('Connected to the MySQL database successfully.');
-// });
-
-// export default db;
 
 
 
 
 
-
-// // server/database/db.js
-// import mysql from 'mysql2';
+// const mysql = require('mysql2');
+// const dotenv = require('dotenv');
+// dotenv.config();
 
 // const db = mysql.createPool({
-//   host: 'localhost',
-//   user: 'root',
-//   password: 'root',
-//   database: 'pdm_database',
+//   host: process.env.DB_HOST,
+//   user: process.env.DB_USER,
+//   password: process.env.DB_PASSWORD,
+//   database: process.env.DB_NAME,
+//   waitForConnections: true,
+//   connectionLimit: 10,     // Adjust based on traffic
+//   queueLimit: 0
 // });
-// db.connect(err => {
-//     if (err) {
-//       console.error('Error connecting to the MySQL database:', err);
-//       return;
-//     }
-//     console.log('Connected to the MySQL database successfully.');
-//   });
+
+// // Optional: log connection success
+// pool.getConnection((err, connection) => {
+//   if (err) {
+//     console.error('Error connecting to MySQL database:', err);
+//   } else {
+//     console.log('Connected to MySQL Database!');
+//     connection.release(); // release the initial test connection
+//   }
+// });
+
+// // This allows you to keep using: connection.query(...)
 // export default db;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
