@@ -1,7 +1,8 @@
 import express from 'express';
 import { fetchTaleCallerData, updateTaleCallerData, getTeleCallerStatus, getCategories, 
     getProductsByCategory, getRawDataStatus, 
-    getAllCombinedRawData} from '../controllers/teleCallerController.js';
+    getAllCombinedRawData,
+    getAllActiveAssignedRawData} from '../controllers/teleCallerController.js';
 
 const router = express.Router();
 
@@ -18,5 +19,7 @@ router.get('/products/:cat_id', getProductsByCategory);
 router.get('/rawdatastatus', getRawDataStatus);
 
 router.get("/combined-rawdata", getAllCombinedRawData);
+
+router.get("/rawdata/active", getAllActiveAssignedRawData);
 
 export default router;

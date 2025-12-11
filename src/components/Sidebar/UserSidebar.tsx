@@ -5,6 +5,7 @@ import SidebarLinkGroup from './SidebarLinkGroup';
 import Logo from '../../images/logo/MMS_logo.png';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
+import { Activity, Ban, PhoneOutgoing, Trophy, XCircle } from 'lucide-react';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -24,6 +25,20 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [sidebarExpanded, setSidebarExpanded] = useState(
     storedSidebarExpanded === null ? false : storedSidebarExpanded === 'true',
   );
+
+
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Close other dropdowns when one opens, but keep current one open if clicking the same
+  const handleDropdownToggle = (menuName: string) => {
+    if (openDropdown === menuName) {
+      // If clicking the same dropdown, keep it open (or close it if you want toggle behavior)
+      setOpenDropdown(null); // Uncomment this if you want toggle behavior
+    } else {
+      // If clicking a different dropdown, close the previous one and open the new one
+      setOpenDropdown(menuName);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -139,7 +154,7 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                       <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
                         <li>
                           <NavLink
-                            to="/dashboard"
+                            to="/call"
                             className={({ isActive }) =>
                               'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
                               (isActive && '!text-white')
@@ -189,125 +204,112 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </SidebarLinkGroup>
               {/* <!-- Dashboard --> */}
    {/* <!-- Menu Item Call --> */}
-              <SidebarLinkGroup
-                activeCondition={
-                  pathname === '/call' || pathname.includes('call')
-                }
-              >
-                {(handleClick, open) => {
-                  return (
-                    <React.Fragment>
-                      <NavLink
-                        to="/call"
-                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                          (pathname === '/call' || pathname.includes('call')) &&
-                          'bg-graydark dark:bg-meta-4'
-                        }`}
-                      >
-                        <svg
-                          className="fill-current"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M6.6 3H3C2.44772 3 2 3.44772 2 4C2 14.4934 9.50659 22 20 22C20.5523 22 21 21.5523 21 21V17.4C21 16.8477 20.5523 16.4 20 16.4C18.1071 16.4 16.2936 15.9255 14.7023 15.0569C14.2548 14.8121 13.6979 14.9266 13.3614 15.3083L11.2529 17.7086C8.28549 16.1684 5.83164 13.7145 4.2914 10.7471L6.69174 8.63859C7.07342 8.30208 7.18789 7.74517 6.94306 7.29774C6.07446 5.70641 5.6 3.89294 5.6 2C5.6 1.44772 5.15228 1 4.6 1H4C3.44772 1 3 1.44772 3 2V6.6C3 7.15228 3.44772 7.6 4 7.6H6.6C7.15228 7.6 7.6 7.15228 7.6 6.6V4C7.6 3.44772 7.15228 3 6.6 3Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                        Call
-                      </NavLink>
-                    </React.Fragment>
-                  );
-                }}
-              </SidebarLinkGroup>
-              {/* <!-- Menu Item call --> */}
-
               
-              {/* <!-- Menu Item followup list --> */}
-              <SidebarLinkGroup
-                activeCondition={
-                  pathname === '/marketing-management/followup' ||
-                  pathname.includes('/marketing-management/followup')
-                }
-              >
-                {(handleClick, open) => (
-                  <>
-                    <NavLink
-                      to="/marketing-management/followup"
-                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                        pathname.includes('/marketing-management/followup') &&
-                        'bg-graydark dark:bg-meta-4'
-                      }`}
-                    >
-                      {/* Clock + check icon */}
-                      <svg
-                        className="fill-current"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 6v6l4 2M12 22a10 10 0 100-20 10 10 0 000 20z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      Follow-up List
-                    </NavLink>
-                  </>
-                )}
-              </SidebarLinkGroup>
+                   {/* <!-- Menu Item Assigned Call --> */}
+              <li>
+                <NavLink
+                  to="/call"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-teal-500/20 hover:border-l-4 hover:border-l-teal-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-teal-500/20 border-l-4 border-l-teal-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <PhoneOutgoing className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">
+                    Assigned Call
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item Assigned Call --> */}
+              
+             {/* <!-- Menu Item: active List --> */}
+              <li>
+                <NavLink
+                  to="/activeleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-yellow-500/20 hover:border-l-4 hover:border-l-yellow-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-yellow-500/20 border-l-4 border-l-yellow-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Activity className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">
+                    Active Leads
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: active List --> */}
+              {/* <!-- Menu Item: win --> */}
+           
+              <li>
+                <NavLink
+                  to="/winleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Trophy className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">Win Leads</span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: win --> */}
 
-              {/* <!-- Menu Item followup list--> */}
+              {/* <!-- Menu Item: Lose --> */}
+              <li>
+                <NavLink
+                  to="/loseleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <XCircle className="w-5 h-5 transition-transform group-hover:scale-110 " />
+                  <span className="transition-all duration-300">
+                    Lose Leads
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: Lose --> */}
 
-              {/* <!-- Menu Item meeting scheduled--> */}
-              <SidebarLinkGroup
-                activeCondition={
-                  pathname === '/marketing-management/meeting-scheduled' ||
-                  pathname.includes('/marketing-management/meeting-scheduled')
-                }
-              >
-                {(handleClick, open) => (
-                  <>
-                    <NavLink
-                      to="/marketing-management/meeting-scheduled"
-                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                        pathname.includes(
-                          '/marketing-management/meeting-scheduled',
-                        ) && 'bg-graydark dark:bg-meta-4'
-                      }`}
-                    >
-                      {/* Calendar icon */}
-                      <svg
-                        className="fill-current"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M8 2v2M16 2v2M3 10h18M5 6h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      Meeting Scheduled
-                    </NavLink>                
-                  </>
-                )}
-              </SidebarLinkGroup>
+              {/* <!-- Menu Item: Invalid --> */}
+              <li>
+                <NavLink
+                  to="/invalidleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Ban className="w-5 h-5 transition-transform group-hover:scale-110 " />
+                  <span className="transition-all duration-300">
+                    Invalid Leads
+                  </span>
+                </NavLink>
+              </li>
 
-              {/* <!-- Menu Item meeting scheduled --> */}
+              {/* <!-- Menu Item: Invalid --> */}
+
+             
 
            
             </ul>

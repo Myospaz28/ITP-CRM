@@ -10,6 +10,7 @@ interface TeleCallerData {
   tc_call_duration: string;
   master_id: number;
   category: string;
+  selected_products?: number[]; 
 }
 
 interface Product {
@@ -30,7 +31,7 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: data.name || '',
-    call_status: data.tc_status || '',
+    call_status: '',
     call_remark: data.tc_remark || '',
     call_duration: data.tc_call_duration || '',
     master_id: data.master_id || 0,
@@ -38,106 +39,94 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
     next_followup_date: '',
   });
 
-  
-
   const [productList, setProductList] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
-  const [rawStatuses, setRawStatuses] = useState<string[]>([]);
   const [selectedRawStatus, setSelectedRawStatus] = useState('');
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     [],
   );
-  const [tcStatuses, setTcStatuses] = useState<string[]>([]);
+
   const [subStageList, setSubStageList] = useState([]);
-
-
   const [stageList, setStageList] = useState([]);
+  const [statusMap, setStatusMap] = useState<any>({});
+
   const rawUserId = localStorage.getItem('user_id');
   const currentUserId =
     rawUserId && !isNaN(parseInt(rawUserId)) ? parseInt(rawUserId) : null;
 
-  const loadStages = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}api/leadstages`, {
-        withCredentials: true,
-      });
-      setStageList(res.data.data);
-    } catch (error) {
-      console.error('Error fetching stages:', error);
+const loadStages = async () => {
+  try {
+    const res = await axios.get(`${BASE_URL}api/leadstages`, {
+      withCredentials: true,
+    });
+
+    const stages = Array.isArray(res.data.data) ? res.data.data : [];
+
+    setStageList(stages);
+
+    const map: any = {};
+    stages.forEach((stage: any) => {
+      if (stage?.stage_id && stage?.stage_name) {
+        map[stage.stage_id] = stage.stage_name;
+      }
+    });
+    setStatusMap(map);
+
+   
+    const currentStatus = data?.tc_status ? data.tc_status.toLowerCase() : null;
+
+    if (!currentStatus) {
+      console.warn("tc_status missing or empty in props:", data);
+      return;
     }
-  };
+
+    const matchedStage = stages.find(
+      (s: any) =>
+        s?.stage_name &&
+        s.stage_name.toLowerCase() === currentStatus
+    );
+
+    if (matchedStage) {
+      setFormData((prev) => ({
+        ...prev,
+        call_status: matchedStage.stage_id,
+      }));
+
+      fetchSubStagesByStage(matchedStage.stage_id);
+    }
+  } catch (error) {
+    console.error("Error fetching stages:", error);
+  }
+};
+
+
   useEffect(() => {
     loadStages();
   }, []);
 
-useEffect(() => {
-  const fetchSubStages = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/leadsubstage`, {
-        withCredentials: true,
-      });
-      setSubStageList(res.data.data); // save all sub-stages
-    } catch (err) {
-      console.error("Error fetching lead sub-stages:", err);
+  useEffect(() => {
+    if (data.selected_products) {
+      setSelectedProducts(data.selected_products.map((p) => Number(p)));
     }
-  };
-
-  fetchSubStages();
-}, []);
-
+  }, [data]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(`${BASE_URL}api/categories`);
+
         const categoryData = res.data.map((cat: any) => ({
           id: cat.cat_id,
           name: cat.cat_name,
         }));
-        setCategories(categoryData);
 
-        const matchedCategory = categoryData.find(
-          (cat) => cat.name.toLowerCase() === data.category?.toLowerCase(),
-        );
-        if (matchedCategory) {
-          setFormData((prev) => ({
-            ...prev,
-            category: matchedCategory.id.toString(),
-            cat_id: matchedCategory.id,
-          }));
-        }
+        setCategories(categoryData);
       } catch (err) {
         console.error('Error fetching categories', err);
       }
     };
 
     fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const fetchTcStatuses = async () => {
-      try {
-        const res = await axios.get(`${BASE_URL}api/tcstatus`);
-        setTcStatuses(res.data);
-      } catch (err) {
-        console.error('Error fetching tc statuses', err);
-      }
-    };
-
-    fetchTcStatuses();
-  }, []);
-
-  const fetchRawStatuses = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}api/rawdatastatus`);
-      setRawStatuses(res.data);
-    } catch (err) {
-      console.error('Error fetching raw statuses:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchRawStatuses();
   }, []);
 
   const fetchProducts = async (catId: string | number) => {
@@ -148,50 +137,88 @@ useEffect(() => {
       console.error('Error fetching products:', err);
     }
   };
+
+  const handleProductSelection = (productId: number, isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedProducts((prev) => [...prev, productId]);
+    } else {
+      setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+    }
+  };
+
   useEffect(() => {
     if (formData.cat_id) {
       fetchProducts(formData.cat_id);
     }
   }, [formData.cat_id]);
 
+  const fetchSubStagesByStage = async (stageId: string | number) => {
+    if (!stageId) {
+      setSubStageList([]);
+      return;
+    }
+
+    try {
+      const res = await axios.get(`${BASE_URL}api/lead-sub-stages/${stageId}`, {
+        withCredentials: true,
+      });
+      setSubStageList(res.data.sub_stages || []);
+    } catch (err) {
+      console.error('Error fetching sub-stages:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (data.selected_products && Array.isArray(data.selected_products)) {
+      setSelectedProducts(data.selected_products.map(Number));
+    }
+  }, [data]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleProductChange = (productId: number) => {
-    setSelectedProducts((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
+    setSelectedProducts((prev) => {
+      const pid = Number(productId);
+
+      return prev.includes(pid)
+        ? prev.filter((id) => id !== pid)
+        : [...prev, pid];
+    });
   };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const tcStatus = statusMap[formData.call_status];
+
     const payload = {
       master_id: formData.master_id,
       cat_id: formData.cat_id,
       client_name: formData.name,
-      tc_status: formData.call_status,
+      tc_status: tcStatus,
       tc_remark: formData.call_remark,
       tc_call_duration: formData.call_duration,
-      selected_products:
-        formData.call_status === 'Interested' ? selectedProducts : [],
-      tc_next_followup_date: formData.next_followup_date || null,
-      selected_raw_status:
-        formData.call_status === 'Interested' ? selectedRawStatus : null,
-      created_by_user: currentUserId,
+
+      lead_stage_id: formData.call_status,
+      lead_sub_stage_id: selectedRawStatus,
+
+      // ✅ ADD THIS ↓↓↓
+      selected_products: selectedProducts,
     };
-    console.log('sending payload', payload);
+
+    console.log('Final Payload:', payload);
 
     try {
       await axios.put(`${BASE_URL}api/edittelecaller`, payload, {
         withCredentials: true,
       });
+
       alert('Updated successfully');
       onUpdate();
       onClose();
@@ -201,26 +228,6 @@ useEffect(() => {
     }
   };
 
-
-  const fetchSubStagesByStage = async (stageId: string | number) => {
-  if (!stageId) {
-    setSubStageList([]); // clear sub-stages if no stage selected
-    return;
-  }
-
-  try {
-    const res = await axios.get(`${BASE_URL}api/lead-sub-stages/${stageId}`, {
-      withCredentials: true,
-    });
-    setSubStageList(res.data.sub_stages || []);
-  } catch (err) {
-    console.error("Error fetching sub-stages:", err);
-  }
-};
-
-  const showInterestedFields = formData.call_status === 'Interested';
-  const showFollowupDate = formData.call_status === 'Interested';
-
   return (
     <div className="bg-white rounded-lg shadow-lg p-5 w-full max-w-3xl max-h-[90vh] overflow-y-auto z-[999]">
       <h2 className="text-lg font-semibold mb-4 border-b pb-2 text-gray-700">
@@ -228,7 +235,7 @@ useEffect(() => {
       </h2>
 
       <form onSubmit={handleEdit} className="space-y-4">
-        {/* Client + Category */}
+        {/* Client */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -243,144 +250,130 @@ useEffect(() => {
             />
           </div>
 
-          {categories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                name="category"
-                value={formData.cat_id}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFormData((prev) => ({
-                    ...prev,
-                    category: val,
-                    cat_id: parseInt(val, 10),
-                  }));
-                }}
-                className="w-full p-2 border border-gray-300 rounded"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.cat_id}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setFormData((prev) => ({
+                  ...prev,
+                  cat_id: val,
+                }));
+                fetchProducts(val); // ⬅️ NO RESET OF selectedProducts
+              }}
+              className="w-full p-2 border border-gray-300 rounded"
+            >
+              <option value="">Select</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
+        {/* Status + Products */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Call Status
-  </label>
-  <select
-    name="call_status"
-    className="w-full p-2 border border-gray-300 rounded"
-    value={formData.call_status}
-    onChange={(e) => {
-      const value = e.target.value;
-      setFormData((prev) => ({
-        ...prev,
-        call_status: value,
-        selected_raw_status: "", // reset sub-stage when stage changes
-      }));
-      fetchSubStagesByStage(value);
-    }}
-  >
-    <option value="">Select Status</option>
-    {stageList.map((stage) => (
-      <option key={stage.stage_id} value={stage.stage_id}>
-        {stage.stage_name}
-      </option>
-    ))}
-  </select>
-</div>
-
-
-          {/* Products Right */}
+          {/* Call Status */}
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Lead Stage
+            </label>
+            <select
+              name="call_status"
+              className="w-full p-2 border border-gray-300 rounded"
+              value={formData.call_status}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData((prev) => ({
+                  ...prev,
+                  call_status: value,
+                }));
+                setSelectedRawStatus('');
+                fetchSubStagesByStage(value);
+              }}
+            >
+              <option value="">Select Status</option>
+              {stageList.map((stage) => (
+                <option key={stage.stage_id} value={stage.stage_id}>
+                  {stage.stage_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Sub Stage
+            </label>
+            <select
+              name="selected_raw_status"
+              className="w-full p-2 border border-gray-300 rounded"
+              value={selectedRawStatus}
+              onChange={(e) => setSelectedRawStatus(e.target.value)}
+            >
+              <option value="">Select Status</option>
+              {subStageList.map((subStage: any) => (
+                <option
+                  key={subStage.lead_sub_stage_id}
+                  value={subStage.lead_sub_stage_id}
+                >
+                  {subStage.lead_sub_stage_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Product List */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Products
             </label>
 
             <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border p-2 rounded">
-              {productList.map((product) => (
-                <label
-                  key={product.product_id}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    type="checkbox"
-                    value={product.product_id}
-                    checked={selectedProducts.includes(product.product_id)}
-                    onChange={() => handleProductChange(product.product_id)}
-                    className="h-4 w-4"
-                  />
-                  <span>{product.product_name}</span>
-                </label>
-              ))}
+         {productList?.map((product) => (
+  <label key={product.product_id} className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      value={product.product_id}
+      checked={selectedProducts.includes(product.product_id)}
+      onChange={(e) =>
+        handleProductSelection(
+          product.product_id,
+          e.target.checked
+        )
+      }
+    />
+    {product.product_name}
+  </label>
+))}
+
             </div>
-          </div>
+          </div> */}
         </div>
 
-        {/* Select Status + Next Followup */}
+        {/* Sub Status + Duration */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-      <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Select Status
-  </label>
-  <select
-    name="selected_raw_status"
-    className="w-full p-2 border border-gray-300 rounded"
-    value={formData.selected_raw_status}
-    onChange={(e) =>
-      setFormData((prev) => ({
-        ...prev,
-        selected_raw_status: e.target.value,
-      }))
-    }
-  >
-    <option value="">Select Status</option>
-    {subStageList.map((subStage) => (
-      <option key={subStage.lead_sub_stage_id} value={subStage.lead_sub_stage_id}>
-        {subStage.lead_sub_stage_name}
-      </option>
-    ))}
-  </select>
-</div>
-
+          {/* Call Duration */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Next Follow-Up Date
+              Call Duration (sec)
             </label>
             <input
-              type="date"
-              name="next_followup_date"
+              type="number"
+              name="call_duration"
               className="w-full p-2 border border-gray-300 rounded"
-              value={formData.next_followup_date}
+              value={formData.call_duration}
               onChange={handleChange}
             />
           </div>
         </div>
 
-        {/* Call Duration */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Call Duration (sec)
-          </label>
-          <input
-            type="number"
-            name="call_duration"
-            className="w-full p-2 border border-gray-300 rounded"
-            value={formData.call_duration}
-            onChange={handleChange}
-          />
-        </div>
-
-        {/* Call Remark */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Call Remark
@@ -393,6 +386,33 @@ useEffect(() => {
             onChange={handleChange}
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Select Products
+          </label>
+
+          <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 rounded">
+            {productList?.map((product) => (
+              <label
+                key={product.product_id}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="checkbox"
+                  value={product.product_id}
+                  checked={selectedProducts.includes(product.product_id)}
+                  onChange={(e) =>
+                    handleProductSelection(product.product_id, e.target.checked)
+                  }
+                />
+                {product.product_name}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Remark */}
 
         {/* Buttons */}
         <div className="flex justify-end gap-3 pt-3 border-t">

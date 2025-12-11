@@ -26,82 +26,6 @@ const insertRawData = async (formattedData) => {
 
 // ========== MAIN IMPORT CONTROLLER ==========
 // export const importRawData = async (req, res) => {
-//   try {
-//     // CHECK LOGIN SESSION
-//     if (!req.session.user) {
-//       return res.status(401).json({ message: "Unauthorized. Please log in." });
-//     }
-
-//     const file = req.file;
-//     const { cat_id, reference, area_id } = req.body;
-//     const created_by_user = req.session.user.id;
-
-//     // VALIDATION
-//     if (!file || !cat_id || !reference || !area_id || !created_by_user) {
-//       return res.status(400).json({ message: "All fields are required!" });
-//     }
-
-//     // READ EXCEL FILE
-//     const workbook = XLSX.read(file.buffer, { type: "buffer" });
-//     const sheetName = workbook.SheetNames[0];
-//     const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//     // FORMAT DATA
-//     const formattedData = data
-//       .filter(row => row.name && row.contact && row.email && row.address)
-//       .map(row => ({
-//         name: row.name,
-//         number: row.contact,
-//         email: row.email,
-//         address: row.address,
-//         area_id,
-//         cat_id,
-//         reference_id: reference,
-//         created_by_user
-//       }));
-
-//     if (formattedData.length === 0) {
-//       return res.status(400).json({ message: "No valid rows found in file." });
-//     }
-
-//     // STEP 1 — CHECK DUPLICATES
-//     for (let i = 0; i < formattedData.length; i++) {
-//       const row = formattedData[i];
-
-//       const [existing] = await db.query(
-//         `SELECT master_id FROM raw_data
-//          WHERE email = ? OR number = ? LIMIT 1`,
-//         [row.email, row.number]
-//       );
-
-//       if (existing.length > 0) {
-//         return res.status(400).json({
-//           message: "Duplicate entries found",
-//           duplicates: [
-//             {
-//               row: i + 2,
-//               name: row.name,
-//               email: row.email,
-//               number: row.number,
-//               issue: "Email or Contact already exists"
-//             }
-//           ]
-//         });
-//       }
-//     }
-
-//     // STEP 2 — INSERT DATA
-//     await insertRawData(formattedData);
-
-//     res.status(200).json({ message: "Data imported successfully!" });
-
-//   } catch (error) {
-//     console.error("Error importing data:", error);
-//     res.status(500).json({ message: "Server error while importing data." });
-//   }
-// };
-
-// export const importRawData = async (req, res) => {
 //   const connection = await db.getConnection();
 
 //   // === DATE PARSER (support numeric Excel date & string date) ===
@@ -524,70 +448,17 @@ export const importRawData = async (req, res) => {
   }
 };
 
-export const addSingleRawData = async (req, res) => {
+
+export const updateRawData = async (req, res) => {
   try {
-    if (!req.session.user) {
-      return res.status(401).json({ message: 'Unauthorized. Please log in.' });
+    const { master_id } = req.params;
+
+    if (!master_id) {
+      return res.status(400).json({ message: 'master_id is required' });
     }
 
+    // Only fields from frontend form
     const {
-      name,
-      number,
-      email,
-      address,
-      qualification = null,
-      passout_year = null,
-      cat_id,
-      reference_id,
-      source_id = null,
-      area_id,
-      assigned_to_user_id,
-    } = req.body;
-
-    const created_by_user = req.session.user.id;
-
-    // VALIDATION
-    if (
-      !name ||
-      !number ||
-      !email ||
-      !address ||
-      !cat_id ||
-      !reference_id ||
-      !area_id ||
-      !assigned_to_user_id
-    ) {
-      return res
-        .status(400)
-        .json({ message: 'All required fields must be filled!' });
-    }
-
-    // CHECK DUPLICATES
-    const [emailExists] = await db.query(
-      'SELECT master_id FROM raw_data WHERE email = ?',
-      [email],
-    );
-    const [contactExists] = await db.query(
-      'SELECT master_id FROM raw_data WHERE number = ?',
-      [number],
-    );
-
-    if (emailExists.length > 0 || contactExists.length > 0) {
-      return res.status(409).json({
-        message: 'Duplicate entry found',
-      });
-    }
-
-    // INSERT INTO RAW_DATA
-    const insertRawQuery = `
-      INSERT INTO raw_data (
-        name, number, email, address, qualification, passout_year,
-        cat_id, reference_id, source_id, area_id, created_by_user
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const rawValues = [
       name,
       number,
       email,
@@ -598,160 +469,6 @@ export const addSingleRawData = async (req, res) => {
       reference_id,
       source_id,
       area_id,
-      created_by_user,
-    ];
-
-    const [rawResult] = await db.query(insertRawQuery, rawValues);
-    const insertedRawId = rawResult.insertId; // <-- needed for assignment table
-
-    // INSERT INTO ASSIGNMENT TABLE
-    const assignQuery = `
-      INSERT INTO assignments (
-        created_by_user, mode, cat_id, assign_date, target_date,
-        remark, assigned_to, assigned_to_user_id, lead_count, assign_type, area_id
-      )
-      VALUES (?, ?, ?, CURDATE(), NULL, NULL, NULL, ?, 1, 'manual', ?)
-    `;
-
-    const assignValues = [
-      created_by_user,
-      'single', // mode for single insert
-      cat_id,
-      assigned_to_user_id,
-      area_id,
-    ];
-
-    await db.query(assignQuery, assignValues);
-
-    return res.status(200).json({
-      message: 'Client added & assigned successfully!',
-      raw_id: insertedRawId,
-    });
-  } catch (error) {
-    console.error('❌ Error adding client:', error);
-    return res
-      .status(500)
-      .json({ message: 'Server error while adding client.' });
-  }
-};
-
-// export const getAllRawData = async (req, res) => {
-//   try {
-//     const raw_data = await getRawData();
-//     res.status(200).json(raw_data);
-//   } catch (error) {
-//     console.error('Error fetching Master Data:', error);
-//     res.status(500).json({ error: 'Failed to fetch Master Data' });
-//   }
-// };
-
-export const getAllRawData = async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        rd.*,
-        a.area_name,
-        c.cat_name,
-        r.reference_name,
-        s.source_name,
-       u.username AS created_by_username
-      FROM raw_data rd
-      LEFT JOIN area a ON rd.area_id = a.area_id
-      LEFT JOIN category c ON rd.cat_id = c.cat_id
-      LEFT JOIN reference r ON rd.reference_id = r.reference_id
-      LEFT JOIN source s ON rd.source_id = s.source_id
-      LEFT JOIN users u ON rd.created_by_user = u.user_id
-      WHERE TRIM(LOWER(rd.status)) = 'not assigned'
-      ORDER BY rd.master_id ASC
-    `;
-
-    const [raw_data] = await db.query(query);
-    res.status(200).json(raw_data);
-  } catch (error) {
-    console.error('❌ Error fetching Master Data:', error);
-    res.status(500).json({ error: 'Failed to fetch Master Data' });
-  }
-};
-
-// update controller
-// export const updateRawData = async (req, res) => {
-//   const master_id = req.params.master_id;
-//   console.log("master", master_id)
-
-//   const {
-//     name = null,
-//     number = null,
-//     email = null,
-//     address = null
-//   } = req.body;
-
-//   console.log("request body", req.body)
-
-//   if (!master_id) {
-//     return res.status(400).json({ message: 'master_id is required' });
-//   }
-
-//   try {
-//     const updateQuery = `
-//       UPDATE raw_data SET
-//         name = ?, number = ?, email = ?, address = ?
-//       WHERE master_id = ?
-//     `;
-
-//     const values = [name, number, email, address, master_id];
-
-//     console.log("data", values)
-
-//     const [result] = await db.execute(updateQuery, values);
-
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ message: 'No matching record found to update' });
-//     }
-
-//     res.status(200).json({ message: 'Raw data updated successfully' });
-//   } catch (error) {
-//     console.error('Error updating raw_data:', error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// };
-
-export const updateRawData = async (req, res) => {
-  try {
-    const { master_id } = req.params;
-
-    if (!master_id) {
-      return res.status(400).json({ message: 'master_id is required' });
-    }
-
-    const {
-      name,
-      number,
-      email,
-      address,
-      area_id,
-      cat_id,
-      reference_id,
-      city,
-      location_link,
-      room_dimension,
-      p_type,
-      budget_range,
-      current_stage,
-      room_ready,
-      time_to_complete,
-      site_visit_date,
-      demo_date,
-      ar_number,
-      ca_number,
-      e_number,
-      sm_number,
-      pop_number,
-      other_number,
-      lead_stage,
-      quick_remark,
-      detailed_remark,
-      status,
-      lead_status,
     } = req.body;
 
     const updateFields = [];
@@ -764,36 +481,17 @@ export const updateRawData = async (req, res) => {
       }
     };
 
+    // Only updating fields that exist in frontend
     addField('name', name);
     addField('number', number);
     addField('email', email);
     addField('address', address);
-    addField('area_id', area_id);
+    addField('qualification', qualification);
+    addField('passout_year', passout_year);
     addField('cat_id', cat_id);
     addField('reference_id', reference_id);
-    addField('city', city);
-    addField('location_link', location_link);
-    addField('room_dimension', room_dimension);
-    addField('p_type', p_type);
-    addField('budget_range', budget_range);
-    addField('current_stage', current_stage);
-    addField('room_ready', room_ready);
-    addField('time_to_complete', time_to_complete);
-    addField('site_visit_date', site_visit_date);
-    addField('demo_date', demo_date);
-    addField('ar_number', ar_number);
-    addField('ca_number', ca_number);
-    addField('e_number', e_number);
-    addField('sm_number', sm_number);
-    addField('pop_number', pop_number);
-    addField('other_number', other_number);
-    addField('lead_stage', lead_stage);
-    addField('quick_remark', quick_remark);
-    addField('detailed_remark', detailed_remark);
-
-    // 👇 Only update status fields if explicitly provided by the user
-    addField('status', status);
-    addField('lead_status', lead_status);
+    addField('source_id', source_id);
+    addField('area_id', area_id);
 
     if (updateFields.length === 0) {
       return res.status(400).json({ message: 'No fields to update' });
@@ -812,12 +510,12 @@ export const updateRawData = async (req, res) => {
       return res.status(404).json({ message: 'Record not found' });
     }
 
-    return res.status(200).json({ message: 'Raw Data updated successfully!' });
+    return res.status(200).json({ message: 'Client updated successfully!' });
   } catch (error) {
     console.error('❌ Update Error:', error);
     return res
       .status(500)
-      .json({ message: 'Server error while updating data' });
+      .json({ message: 'Server error while updating client' });
   }
 };
 
@@ -853,3 +551,601 @@ export const deleteMultipleClients = async (req, res) => {
     res.status(500).json({ message: 'Error deleting the selected entries' });
   }
 };
+
+
+
+
+export const getAllRawData = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        rd.*,
+        a.area_name,
+        c.cat_name,
+        r.reference_name
+      FROM raw_data rd
+      LEFT JOIN area a ON rd.area_id = a.area_id
+      LEFT JOIN category c ON rd.cat_id = c.cat_id
+      LEFT JOIN reference r ON rd.reference_id = r.reference_id
+      WHERE TRIM(LOWER(rd.status)) = 'not assigned'
+      ORDER BY rd.master_id ASC
+    `;
+
+    const [raw_data] = await db.query(query);
+    res.status(200).json(raw_data);
+  } catch (error) {
+    console.error('❌ Error fetching Master Data:', error);
+    res.status(500).json({ error: 'Failed to fetch Master Data' });
+  }
+};
+
+
+
+export const addSingleRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'Unauthorized. Please log in.' });
+    }
+
+    const {
+      name,
+      number,
+      email,
+      address,
+      qualification = null,
+      passout_year = null,
+      cat_id,
+      reference_id,
+      source_id = null,
+      area_id,
+      assigned_to_user_id,
+    } = req.body;
+
+    const created_by_user = req.session.user.id;
+
+    if (
+      !name ||
+      !number ||
+      !email ||
+      !address ||
+      !cat_id ||
+      !reference_id ||
+      !assigned_to_user_id
+    ) {
+      return res
+        .status(400)
+        .json({ message: 'All required fields must be filled!' });
+    }
+
+    const [emailExists] = await db.query(
+      'SELECT master_id FROM raw_data WHERE email = ?',
+      [email],
+    );
+    const [contactExists] = await db.query(
+      'SELECT master_id FROM raw_data WHERE number = ?',
+      [number],
+    );
+
+    if (emailExists.length > 0 || contactExists.length > 0) {
+      return res.status(409).json({ message: 'Duplicate entry found' });
+    }
+
+    // INSERT RAW DATA (assign_id will be updated later)
+    const rawQuery = `
+      INSERT INTO raw_data (
+        name, number, email, address, qualification, passout_year,
+        cat_id, reference_id, source_id, area_id, created_by_user, status, lead_status
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Assigned', 'Inactive')
+    `;
+
+    const [rawRes] = await db.query(rawQuery, [
+      name,
+      number,
+      email,
+      address,
+      qualification,
+      passout_year,
+      cat_id,
+      reference_id,
+      source_id,
+      area_id,
+      created_by_user,
+    ]);
+
+    const master_id = rawRes.insertId;
+
+    // GET ASSIGNED USER NAME
+    const [userRows] = await db.query(
+      'SELECT name FROM users WHERE user_id = ?',
+      [assigned_to_user_id],
+    );
+
+    const assigned_to_name = userRows.length ? userRows[0].name : null;
+
+    // INSERT ASSIGNMENT ENTRY
+    const assignQuery = `
+      INSERT INTO assignments (
+        created_by_user, mode, cat_id, assign_date, target_date, remark,
+        assigned_to, assigned_to_user_id, lead_count, assign_type, area_id
+      )
+      VALUES (?, 'single', ?, CURDATE(), NULL, NULL, ?, ?, 1, 'manual', ?)
+    `;
+
+    const [assignRes] = await db.query(assignQuery, [
+      created_by_user,
+      cat_id,
+      assigned_to_name,
+      assigned_to_user_id,
+      area_id,
+    ]);
+
+    const assign_id = assignRes.insertId;
+
+    // UPDATE RAW DATA WITH assign_id
+    await db.query(`UPDATE raw_data SET assign_id = ? WHERE master_id = ?`, [
+      assign_id,
+      master_id,
+    ]);
+
+    return res.status(200).json({
+      message: 'Client added & assigned successfully!',
+      master_id,
+      assign_id,
+    });
+  } catch (error) {
+    console.error('❌ Error adding client:', error);
+    return res
+      .status(500)
+      .json({ message: 'Server error while adding client.' });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+export const getLeadStageLogsWithAssignment = async (req, res) => {
+  const { master_id } = req.params;
+
+  try {
+    // 1️⃣ Fetch main lead info from raw_data
+    const [[leadInfo]] = await db.query(
+      `SELECT 
+          rd.master_id,
+          rd.name,
+          rd.number,
+          rd.email,
+          rd.lead_status,
+          rd.lead_stage_id,
+          rd.lead_sub_stage_id,
+          ls.stage_name AS current_stage_name,
+          lss.lead_sub_stage_name AS current_sub_stage_name
+       FROM raw_data rd
+       LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+       LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+       WHERE rd.master_id = ?`,
+      [master_id]
+    );
+
+    if (!leadInfo) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    // 2️⃣ Fetch stage change logs
+    const [logs] = await db.query(
+      `SELECT 
+          leadlog_id,
+          previous_leads,
+          previous_sub_leads,
+          new_leads,
+          new_sub_leads,
+          remark,
+          updated_at
+       FROM lead_stage_logs
+       WHERE master_id = ?
+       ORDER BY updated_at DESC`,
+      [master_id]
+    );
+
+    // 3️⃣ Fetch assignment details
+    const [[assignment]] = await db.query(
+      `SELECT 
+          a.assign_id,
+          a.assigned_to,
+          a.assigned_to_user_id,
+          a.assign_date,
+          a.target_date,
+          a.mode,
+          a.cat_id,
+          a.remark AS assign_remark
+       FROM assignments a
+       WHERE a.assign_id = (
+           SELECT assign_id FROM raw_data WHERE master_id = ?
+       )`,
+      [master_id]
+    );
+
+    return res.json({
+      success: true,
+      lead: leadInfo,
+      logs: logs,
+      assignment: assignment || null,
+    });
+
+  } catch (error) {
+    console.error("Error fetching lead logs:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+
+
+
+
+export const getAllWinRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: userId, role } = req.session.user;
+
+    const query = `
+      SELECT 
+        rd.master_id,
+        rd.name,
+        rd.number,
+        rd.email,
+        rd.address,
+        rd.area_id,
+        rd.qualification,
+        rd.passout_year,
+        rd.cat_id,
+        rd.reference_id,
+        rd.source_id,
+        rd.status,
+        rd.lead_status,
+        rd.assign_id,
+        rd.created_by_user,
+        rd.created_at,
+        rd.lead_activity,
+        rd.call_remark,
+        rd.call_duration,
+
+        a.area_name,
+        c.cat_name,
+        r.reference_name,
+        s.source_name,
+
+        ls.stage_id,
+        ls.stage_name,
+        lss.lead_sub_stage_id,
+        lss.lead_sub_stage_name,
+
+        -- ASSIGNMENT DETAILS
+        asg.mode,
+        asg.assign_date,
+        asg.target_date,
+        asg.assigned_to,
+        asg.assigned_to_user_id,
+
+        GROUP_CONCAT(DISTINCT p.product_name) AS products
+
+      FROM raw_data rd
+      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+      LEFT JOIN area a ON rd.area_id = a.area_id
+      LEFT JOIN category c ON rd.cat_id = c.cat_id
+      LEFT JOIN reference r ON rd.reference_id = r.reference_id
+      LEFT JOIN source s ON rd.source_id = s.source_id
+      LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+      LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+      LEFT JOIN product_mapping pm ON pm.master_id = rd.master_id
+      LEFT JOIN product p ON p.product_id = pm.product_id
+
+      WHERE rd.status = 'Assigned'
+        AND rd.lead_status = 'Win'
+        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+
+      GROUP BY rd.master_id
+      ORDER BY rd.master_id DESC
+    `;
+
+    const params = role === "tele-caller" ? [userId] : [];
+    const [rows] = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("❌ getAllActiveAssignedRawData Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+//lose Leads
+export const getAllLoseRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: userId, role } = req.session.user;
+
+    const query = `
+      SELECT 
+        rd.master_id,
+        rd.name,
+        rd.number,
+        rd.email,
+        rd.address,
+        rd.area_id,
+        rd.qualification,
+        rd.passout_year,
+        rd.cat_id,
+        rd.reference_id,
+        rd.source_id,
+        rd.status,
+        rd.lead_status,
+        rd.assign_id,
+        rd.created_by_user,
+        rd.created_at,
+        rd.lead_activity,
+        rd.call_remark,
+        rd.call_duration,
+
+        a.area_name,
+        c.cat_name,
+        r.reference_name,
+        s.source_name,
+
+        ls.stage_id,
+        ls.stage_name,
+        lss.lead_sub_stage_id,
+        lss.lead_sub_stage_name,
+
+        -- ASSIGNMENT DETAILS
+        asg.mode,
+        asg.assign_date,
+        asg.target_date,
+        asg.assigned_to,
+        asg.assigned_to_user_id,
+
+        GROUP_CONCAT(DISTINCT p.product_name) AS products
+
+      FROM raw_data rd
+      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+      LEFT JOIN area a ON rd.area_id = a.area_id
+      LEFT JOIN category c ON rd.cat_id = c.cat_id
+      LEFT JOIN reference r ON rd.reference_id = r.reference_id
+      LEFT JOIN source s ON rd.source_id = s.source_id
+      LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+      LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+      LEFT JOIN product_mapping pm ON pm.master_id = rd.master_id
+      LEFT JOIN product p ON p.product_id = pm.product_id
+
+      WHERE rd.status = 'Assigned'
+        AND rd.lead_status = 'Lose'
+        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+
+      GROUP BY rd.master_id
+      ORDER BY rd.master_id DESC
+    `;
+
+    const params = role === "tele-caller" ? [userId] : [];
+    const [rows] = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("❌ getAllActiveAssignedRawData Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+//invalid leads
+export const getAllInvalidRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: userId, role } = req.session.user;
+
+    const query = `
+      SELECT 
+        rd.master_id,
+        rd.name,
+        rd.number,
+        rd.email,
+        rd.address,
+        rd.area_id,
+        rd.qualification,
+        rd.passout_year,
+        rd.cat_id,
+        rd.reference_id,
+        rd.source_id,
+        rd.status,
+        rd.lead_status,
+        rd.assign_id,
+        rd.created_by_user,
+        rd.created_at,
+        rd.lead_activity,
+        rd.call_remark,
+        rd.call_duration,
+
+        a.area_name,
+        c.cat_name,
+        r.reference_name,
+        s.source_name,
+
+        ls.stage_id,
+        ls.stage_name,
+        lss.lead_sub_stage_id,
+        lss.lead_sub_stage_name,
+
+        -- ASSIGNMENT DETAILS
+        asg.mode,
+        asg.assign_date,
+        asg.target_date,
+        asg.assigned_to,
+        asg.assigned_to_user_id,
+
+        GROUP_CONCAT(DISTINCT p.product_name) AS products
+
+      FROM raw_data rd
+      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+      LEFT JOIN area a ON rd.area_id = a.area_id
+      LEFT JOIN category c ON rd.cat_id = c.cat_id
+      LEFT JOIN reference r ON rd.reference_id = r.reference_id
+      LEFT JOIN source s ON rd.source_id = s.source_id
+      LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+      LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+      LEFT JOIN product_mapping pm ON pm.master_id = rd.master_id
+      LEFT JOIN product p ON p.product_id = pm.product_id
+
+      WHERE rd.status = 'Assigned'
+        AND rd.lead_status = 'Invalid'
+        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+
+      GROUP BY rd.master_id
+      ORDER BY rd.master_id DESC
+    `;
+
+    const params = role === "tele-caller" ? [userId] : [];
+    const [rows] = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("❌ getAllActiveAssignedRawData Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+export const updateLeadWithStageLogs = async (req, res) => {
+  const {
+    name,
+    number,
+    email,
+    address,
+    area_id,
+    qualification,
+    passout_year,
+    cat_id,
+    reference_id,
+    source_id,
+    lead_status, // coming from frontend
+    lead_stage_id,
+    lead_sub_stage_id,
+    remark,
+    call_duration,
+    call_remark,
+  } = req.body;
+
+  const { master_id } = req.params;
+
+  try {
+    // Fetch existing lead info BEFORE update
+    const [oldLead] = await db.query(
+      `SELECT rd.lead_stage_id, rd.lead_sub_stage_id,
+              ls.stage_name AS previous_stage_name,
+              lss.lead_sub_stage_name AS previous_sub_stage_name
+       FROM raw_data rd
+       LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+       LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+       WHERE rd.master_id = ?`,
+      [master_id],
+    );
+
+    if (!oldLead.length)
+      return res.status(404).json({ message: "Lead not found" });
+
+    const previousStageId = oldLead[0].lead_stage_id;
+    const previousSubStageId = oldLead[0].lead_sub_stage_id;
+    const previousStageName = oldLead[0].previous_stage_name;
+    const previousSubStageName = oldLead[0].previous_sub_stage_name;
+
+    // ------------------------------
+    // 1️⃣ Update raw_data table
+    // ------------------------------
+    await db.query(
+      `UPDATE raw_data SET 
+        name = ?, number = ?, email = ?, address = ?, area_id = ?, 
+        qualification = ?, passout_year = ?, cat_id = ?, reference_id = ?, 
+        source_id = ?, lead_status = ?, lead_stage_id = ?, lead_sub_stage_id = ?, 
+        call_remark = ?, call_duration = ?
+       WHERE master_id = ?`,
+      [
+        name,
+        number,
+        email,
+        address,
+        area_id,
+        qualification,
+        passout_year,
+        cat_id,
+        reference_id,
+        source_id,
+        lead_status, // updated even if only lead_status changes
+        lead_stage_id,
+        lead_sub_stage_id,
+        call_remark || remark || null,
+        call_duration || null,
+        master_id,
+      ],
+    );
+
+    // ------------------------------
+    // 2️⃣ Insert into lead_stage_logs ONLY if stage/sub-stage changed
+    // ------------------------------
+    if (
+      previousStageId !== lead_stage_id ||
+      previousSubStageId !== lead_sub_stage_id
+    ) {
+      // Fetch human-readable stage names
+      const [[newStage]] = await db.query(
+        `SELECT stage_name FROM lead_stage WHERE stage_id = ?`,
+        [lead_stage_id],
+      );
+      const [[newSubStage]] = await db.query(
+        `SELECT lead_sub_stage_name FROM lead_sub_stage WHERE lead_sub_stage_id = ?`,
+        [lead_sub_stage_id],
+      );
+
+      await db.query(
+        `INSERT INTO lead_stage_logs 
+         (master_id, previous_leads, previous_sub_leads, new_leads, new_sub_leads, remark) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          master_id,
+          previousStageName || previousStageId.toString(),
+          previousSubStageName || previousSubStageId.toString(),
+          newStage?.stage_name || lead_stage_id.toString(),
+          newSubStage?.lead_sub_stage_name || lead_sub_stage_id.toString(),
+          call_remark || remark || null,
+        ],
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: "Lead updated successfully",
+      logs_added: previousStageId !== lead_stage_id || previousSubStageId !== lead_sub_stage_id,
+    });
+  } catch (error) {
+    console.error("Error updating lead:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+

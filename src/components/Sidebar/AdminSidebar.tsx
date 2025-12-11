@@ -25,6 +25,10 @@ import {
   ChevronDown,
   X,
   Layers,
+  Trophy,
+  Activity,
+  Ban,
+  XCircle,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,7 +55,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const handleDropdownToggle = (menuName: string) => {
     if (openDropdown === menuName) {
       // If clicking the same dropdown, keep it open (or close it if you want toggle behavior)
-      // setOpenDropdown(null); // Uncomment this if you want toggle behavior
+      setOpenDropdown(null); // Uncomment this if you want toggle behavior
     } else {
       // If clicking a different dropdown, close the previous one and open the new one
       setOpenDropdown(menuName);
@@ -215,7 +219,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               }
                             >
                               <FileText className="w-4 h-4" />
-                              Master Data
+                              Data Import
                             </NavLink>
                           </li>
                           {/* <!-- Menu Item Master Data --> */}
@@ -296,7 +300,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               Center
                             </NavLink>
                           </li>
-                           <li>
+                          <li>
                             <NavLink
                               to="/inquiry-form"
                               className={({ isActive }) =>
@@ -399,6 +403,112 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </SidebarLinkGroup>
               {/* <!-- Menu Item User --> */}
 
+              {/* <!-- Menu Item Assigned Call --> */}
+              <li>
+                <NavLink
+                  to="/call"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-teal-500/20 hover:border-l-4 hover:border-l-teal-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-teal-500/20 border-l-4 border-l-teal-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <PhoneOutgoing className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">
+                    Assigned Call
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item Assigned Call --> */}
+
+
+
+{/* <!-- Menu Item: active List --> */}
+              <li>
+                <NavLink
+                  to="/activeleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-yellow-500/20 hover:border-l-4 hover:border-l-yellow-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-yellow-500/20 border-l-4 border-l-yellow-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Activity className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">
+                    Active Leads
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: active List --> */}
+              {/* <!-- Menu Item: win --> */}
+           
+              <li>
+                <NavLink
+                  to="/winleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Trophy className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span className="transition-all duration-300">Win Leads</span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: win --> */}
+
+              {/* <!-- Menu Item: Lose --> */}
+              <li>
+                <NavLink
+                  to="/loseleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <XCircle className="w-5 h-5 transition-transform group-hover:scale-110 " />
+                  <span className="transition-all duration-300">
+                    Lose Leads
+                  </span>
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item: Lose --> */}
+
+              {/* <!-- Menu Item: Invalid --> */}
+              <li>
+                <NavLink
+                  to="/invalidleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-indigo-500/20 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <Ban className="w-5 h-5 transition-transform group-hover:scale-110 " />
+                  <span className="transition-all duration-300">
+                    Invalid Leads
+                  </span>
+                </NavLink>
+              </li>
+
+              {/* <!-- Menu Item: Invalid --> */}
+
               {/* <!-- Menu Item Campaign --> */}
               <SidebarLinkGroup
                 activeCondition={
@@ -479,29 +589,8 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </SidebarLinkGroup>
               {/* <!-- Menu Item Campaign --> */}
 
-              {/* <!-- Menu Item Assigned Call --> */}
-              <li>
-                <NavLink
-                  to="/call"
-                  className={({ isActive }) =>
-                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-teal-500/20 hover:border-l-4 hover:border-l-teal-400 hover:pl-3 ${
-                      isActive
-                        ? 'bg-teal-500/20 border-l-4 border-l-teal-400 text-white shadow-lg'
-                        : 'text-gray-300'
-                    }`
-                  }
-                  onClick={() => setOpenDropdown(null)}
-                >
-                  <PhoneOutgoing className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  <span className="transition-all duration-300">
-                    Assigned Call
-                  </span>
-                </NavLink>
-              </li>
-              {/* <!-- Menu Item Assigned Call --> */}
-
               {/* <!-- Menu Item: Follow-up List --> */}
-              <li>
+              {/* <li>
                 <NavLink
                   to="/followup/followup-list"
                   className={({ isActive }) =>
@@ -518,11 +607,11 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Follow-up List
                   </span>
                 </NavLink>
-              </li>
+              </li> */}
               {/* <!-- Menu Item: Follow-up List --> */}
 
               {/* <!-- Menu Item: Meeting Scheduled --> */}
-              <li>
+              {/* <li>
                 <NavLink
                   to="/followup/meeting-scheduled"
                   className={({ isActive }) =>
@@ -539,7 +628,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Meeting Scheduled
                   </span>
                 </NavLink>
-              </li>
+              </li> */}
               {/* <!-- Menu Item: Meeting Scheduled --> */}
 
               {/* <!-- Menu Item Visit --> */}

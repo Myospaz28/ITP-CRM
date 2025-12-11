@@ -146,230 +146,14 @@ export const getRawDataStatus = async (req, res) => {
 //update telecaller
 
 
-export const updateTaleCallerData = async (req, res) => {
-  const {
-    master_id,
-    cat_id,
-    tc_status,
-    tc_remark,
-    tc_call_duration,
-    client_name,
-    tc_next_followup_date,
-    selected_products = [],
-    selected_raw_status,
-  } = req.body;
-
-  const created_by_user = req.session?.user?.id || req.body.created_by_user;
-
-  if (!created_by_user || isNaN(parseInt(created_by_user))) {
-    return res.status(400).json({ message: 'Invalid or missing user ID' });
-  }
-
-  try {
-    const callDuration =
-      tc_call_duration === '' ? null : parseInt(tc_call_duration, 10);
-    const product_id =
-      selected_products.length > 0 ? selected_products[0] : null;
-
-    const [existingTeleCaller] = await db.query(
-      `SELECT * FROM tele_caller_table WHERE master_id = ?`,
-      [master_id],
-    );
-
-    if (tc_status === 'Not Interested') {
-      if (existingTeleCaller.length > 0) {
-        await db.query(
-          `UPDATE tele_caller_table
-           SET cat_id = ?, product_id = ?, tc_status = ?, tc_remark = ?, tc_call_duration = ?, tc_next_followup_date = ?
-           WHERE master_id = ?`,
-          [
-            cat_id,
-            null,
-            tc_status,
-            tc_remark,
-            callDuration,
-            tc_next_followup_date,
-            master_id,
-          ],
-        );
-      } else {
-        await db.query(
-          `INSERT INTO tele_caller_table
-           (master_id, cat_id, product_id, tc_status, tc_remark, tc_call_duration, tc_next_followup_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            master_id,
-            cat_id,
-            null,
-            tc_status,
-            tc_remark,
-            callDuration,
-            tc_next_followup_date,
-          ],
-        );
-      }
-
-      await db.query(
-        `UPDATE raw_data SET name = ?, status = ?, lead_status = ? WHERE master_id = ?`,
-        [client_name, 'Lead Cancelled', 'Inactive', master_id],
-      );
-
-      return res
-        .status(200)
-        .json({ message: 'Not Interested data saved successfully' });
-    }
-
-    let finalStatus = 'Assigned';
-    let leadStatus = 'Inactive';
-
-    if (tc_status === 'Interested') {
-      if (!selected_raw_status) {
-        return res
-          .status(400)
-          .json({ message: 'Please select a status for Interested' });
-      }
-      finalStatus = selected_raw_status;
-      leadStatus = 'Active';
-    } else if (tc_status === 'Follow-Up') {
-      finalStatus = 'Follow-Up';
-    }
-
-    if (existingTeleCaller.length > 0) {
-      await db.query(
-        `UPDATE tele_caller_table
-         SET cat_id = ?, product_id = ?, tc_status = ?, tc_remark = ?, tc_call_duration = ?, tc_next_followup_date = ?
-         WHERE master_id = ?`,
-        [
-          cat_id,
-          product_id,
-          tc_status,
-          tc_remark,
-          callDuration,
-          tc_next_followup_date,
-          master_id,
-        ],
-      );
-    } else {
-      await db.query(
-        `INSERT INTO tele_caller_table
-         (master_id, cat_id, product_id, tc_status, tc_remark, tc_call_duration, tc_next_followup_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          master_id,
-          cat_id,
-          product_id,
-          tc_status,
-          tc_remark,
-          callDuration,
-          tc_next_followup_date,
-        ],
-      );
-    }
-
-    await db.query(
-      `UPDATE raw_data SET name = ?, status = ?, lead_status = ? WHERE master_id = ?`,
-      [client_name, finalStatus, leadStatus, master_id],
-    );
-
-    if (
-      ['Follow-Up', 'Meeting Scheduled', 'Lead Converted'].includes(finalStatus)
-    ) {
-      await db.query(
-        `UPDATE raw_data SET lead_activity = IFNULL(lead_activity, 0) + 1 WHERE master_id = ?`,
-        [master_id],
-      );
-    }
-
-    if (finalStatus === 'Follow-Up') {
-      const followupStatus = 'next follow up';
-
-      const [rawDataResult] = await db.query(
-        'SELECT number FROM raw_data WHERE master_id = ?',
-        [master_id],
-      );
-      const client_number =
-        rawDataResult.length > 0 ? rawDataResult[0].number : '';
-
-      const [existingFollowup] = await db.query(
-        `SELECT * FROM followup WHERE master_id = ?`,
-        [master_id],
-      );
-
-      if (existingFollowup.length > 0) {
-        await db.query(
-          `UPDATE followup
-           SET client_name = ?, client_contact = ?, followup_date = ?, remark = ?, status = ?, created_by_user = ?
-           WHERE master_id = ?`,
-          [
-            client_name,
-            client_number,
-            tc_next_followup_date,
-            tc_remark,
-            followupStatus,
-            created_by_user,
-            master_id,
-          ],
-        );
-      } else {
-        await db.query(
-          `INSERT INTO followup
-           (master_id, client_name, client_contact, followup_date, remark, status, created_by_user)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            master_id,
-            client_name,
-            client_number,
-            tc_next_followup_date,
-            tc_remark,
-            followupStatus,
-            created_by_user,
-          ],
-        );
-      }
-    }
-
-    if (tc_status === 'Interested') {
-      for (const product_id of selected_products) {
-        if (!product_id) continue;
-
-        const [productData] = await db.query(
-          `SELECT cat_id FROM product WHERE product_id = ?`,
-          [product_id],
-        );
-        if (productData.length === 0) continue;
-
-        const realCatId = productData[0].cat_id;
-        const [existing] = await db.query(
-          `SELECT * FROM product_mapping WHERE master_id = ? AND product_id = ?`,
-          [master_id, product_id],
-        );
-
-        if (existing.length === 0) {
-          await db.query(
-            `INSERT INTO product_mapping
-             (master_id, product_id, cat_id, created_by_user)
-             VALUES (?, ?, ?, ?)`,
-            [master_id, product_id, realCatId, created_by_user],
-          );
-        }
-      }
-    }
-
-    res.status(200).json({ message: 'Tele-caller data updated successfully' });
-  } catch (error) {
-    console.error('Error updating tele-caller data:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
 
 
 
 
 export const getAllCombinedRawData = async (req, res) => {
   try {
-    // Check session
     if (!req.session.user) {
-      return res.status(401).json({ message: "Unauthorized: No session" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const { id: userId, role } = req.session.user;
@@ -384,9 +168,6 @@ export const getAllCombinedRawData = async (req, res) => {
         rd.area_id,
         rd.qualification,
         rd.passout_year,
-        rd.fb_lead_id,
-        rd.form_id,
-        rd.page_id,
         rd.cat_id,
         rd.reference_id,
         rd.source_id,
@@ -397,60 +178,277 @@ export const getAllCombinedRawData = async (req, res) => {
         rd.created_at,
         rd.lead_activity,
 
-        -- Area & Category
         a.area_name,
         c.cat_name,
         r.reference_name,
-
-        -- Assignment
-        asg.assign_date,
-        asg.target_date,
-        COALESCE(u.name, asg.assigned_to, 'Not Assigned') AS assigned_user_name,
-
-        -- Source
         s.source_name,
 
-        -- Lead Stage & Sub Stage
         ls.stage_id,
         ls.stage_name,
         lss.lead_sub_stage_id,
         lss.lead_sub_stage_name,
 
-        -- Telecaller
-        MAX(tct.tc_remark) AS call_remark,
-        MAX(tct.tc_call_duration) AS call_duration,
+        -- ASSIGNMENT DETAILS
+        asg.mode,
+        asg.assign_date,
+        asg.target_date,
+        asg.assigned_to,
+        asg.assigned_to_user_id,
 
-        -- Products
         GROUP_CONCAT(DISTINCT p.product_name) AS products
 
       FROM raw_data rd
+      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
       LEFT JOIN area a ON rd.area_id = a.area_id
       LEFT JOIN category c ON rd.cat_id = c.cat_id
       LEFT JOIN reference r ON rd.reference_id = r.reference_id
-      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
-      LEFT JOIN users u ON asg.assigned_to_user_id = u.user_id
       LEFT JOIN source s ON rd.source_id = s.source_id
       LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
       LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
-      LEFT JOIN tele_caller_table tct ON rd.master_id = tct.master_id
-      LEFT JOIN product_mapping pm ON rd.master_id = pm.master_id
-      LEFT JOIN product p ON pm.product_id = p.product_id
+      LEFT JOIN product_mapping pm ON pm.master_id = rd.master_id
+      LEFT JOIN product p ON p.product_id = pm.product_id
 
-      WHERE 1 = 1
-      ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+      WHERE rd.status = 'Assigned'
+        AND rd.lead_status = 'Inactive'
+        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
 
       GROUP BY rd.master_id
-      ORDER BY rd.master_id ASC
+      ORDER BY rd.master_id DESC
     `;
 
     const params = role === "tele-caller" ? [userId] : [];
+    const [rows] = await db.query(query, params);
 
-    const [results] = await db.query(query, params);
-
-    res.status(200).json(results);
+    res.json(rows);
 
   } catch (error) {
-    console.error("❌ Error in getAllCombinedRawData:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ getAllCombinedRawData Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+
+export const getAllActiveAssignedRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: userId, role } = req.session.user;
+
+    const query = `
+      SELECT 
+        rd.master_id,
+        rd.name,
+        rd.number,
+        rd.email,
+        rd.address,
+        rd.area_id,
+        rd.qualification,
+        rd.passout_year,
+        rd.cat_id,
+        rd.reference_id,
+        rd.source_id,
+        rd.status,
+        rd.lead_status,
+        rd.assign_id,
+        rd.created_by_user,
+        rd.created_at,
+        rd.lead_activity,
+        rd.call_remark,
+        rd.call_duration,
+
+        a.area_name,
+        c.cat_name,
+        r.reference_name,
+        s.source_name,
+
+        ls.stage_id,
+        ls.stage_name,
+        lss.lead_sub_stage_id,
+        lss.lead_sub_stage_name,
+
+        -- ASSIGNMENT DETAILS
+        asg.mode,
+        asg.assign_date,
+        asg.target_date,
+        asg.assigned_to,
+        asg.assigned_to_user_id,
+
+        GROUP_CONCAT(DISTINCT p.product_name) AS products
+
+      FROM raw_data rd
+      LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+      LEFT JOIN area a ON rd.area_id = a.area_id
+      LEFT JOIN category c ON rd.cat_id = c.cat_id
+      LEFT JOIN reference r ON rd.reference_id = r.reference_id
+      LEFT JOIN source s ON rd.source_id = s.source_id
+      LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+      LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+      LEFT JOIN product_mapping pm ON pm.master_id = rd.master_id
+      LEFT JOIN product p ON p.product_id = pm.product_id
+
+      WHERE rd.status = 'Assigned'
+        AND rd.lead_status = 'Active'
+        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+
+      GROUP BY rd.master_id
+      ORDER BY rd.master_id DESC
+    `;
+
+    const params = role === "tele-caller" ? [userId] : [];
+    const [rows] = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("❌ getAllActiveAssignedRawData Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+
+export const updateTaleCallerData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized: No session" });
+    }
+
+    const created_by_user = req.session.user.id;
+
+    const {
+      master_id,
+      cat_id,
+      client_name,
+      tc_status,
+      tc_remark,
+      tc_call_duration,
+      lead_stage_id,
+      lead_sub_stage_id,
+      selected_products = []
+    } = req.body;
+
+    // ------------------------------------
+    // 1️⃣ Determine lead_status
+    // ------------------------------------
+    const [currentLead] = await db.query(
+      "SELECT status FROM raw_data WHERE master_id = ?",
+      [master_id]
+    );
+
+    let lead_status = "Inactive";
+
+    if (currentLead?.[0]?.status === "Assigned") {
+      lead_status = "Active";
+    }
+
+    // ------------------------------------
+    // 2️⃣ FETCH NEW STAGE NAME
+    // ------------------------------------
+    const [[stage]] = await db.query(
+      "SELECT stage_name FROM lead_stage WHERE stage_id = ?",
+      [lead_stage_id]
+    );
+    const newStageName = stage?.stage_name || null;
+
+    // ------------------------------------
+    // 3️⃣ FETCH NEW SUB-STAGE NAME
+    // ------------------------------------
+    const [[substage]] = await db.query(
+      "SELECT lead_sub_stage_name FROM lead_sub_stage WHERE lead_sub_stage_id = ?",
+      [lead_sub_stage_id]
+    );
+    const newSubStageName = substage?.lead_sub_stage_name || null;
+
+    // ------------------------------------
+    // 4️⃣ UPDATE raw_data TABLE
+    // ------------------------------------
+    const updateRawDataQuery = `
+      UPDATE raw_data
+      SET 
+        cat_id = ?, 
+        name = ?, 
+        call_remark = ?, 
+        call_duration = ?, 
+        lead_stage_id = ?, 
+        lead_sub_stage_id = ?,
+        lead_status = ?
+      WHERE master_id = ?
+    `;
+
+    await db.query(updateRawDataQuery, [
+      cat_id,
+      client_name,
+      tc_remark,
+      tc_call_duration,
+      lead_stage_id,
+      lead_sub_stage_id,
+      lead_status,
+      master_id
+    ]);
+
+    // ------------------------------------
+    // 5️⃣ DELETE OLD PRODUCT MAPPINGS
+    // ------------------------------------
+    await db.query("DELETE FROM product_mapping WHERE master_id = ?", [
+      master_id,
+    ]);
+
+    // ------------------------------------
+    // 6️⃣ INSERT NEW PRODUCTS
+    // ------------------------------------
+    if (selected_products.length > 0) {
+      const insertMappingQuery = `
+        INSERT INTO product_mapping (master_id, product_id, cat_id, created_by_user)
+        VALUES ?
+      `;
+
+      const values = selected_products.map((prodId) => [
+        master_id,
+        prodId,
+        cat_id,
+        created_by_user
+      ]);
+
+      await db.query(insertMappingQuery, [values]);
+    }
+
+    // ------------------------------------
+    // 7️⃣ INSERT INTO lead_stage_logs TABLE
+    // previous_leads = "New Lead"
+    // previous_sub_leads = "Fresh Lead"
+    // ------------------------------------
+    const insertLogQuery = `
+      INSERT INTO lead_stage_logs 
+      (master_id, previous_leads, previous_sub_leads, new_leads, new_sub_leads, remark)
+      VALUES (?, 'New Lead', 'Fresh Lead', ?, ?, ?)
+    `;
+
+    await db.query(insertLogQuery, [
+      master_id,
+      newStageName,
+      newSubStageName,
+      tc_remark || null
+    ]);
+
+    // ------------------------------------
+    // 8️⃣ Response
+    // ------------------------------------
+    return res.json({
+      message: "Telecaller updated successfully",
+      updated_master_id: master_id,
+      products_saved: selected_products.length,
+      log_inserted: true,
+      lead_status_updated: lead_status
+    });
+
+  } catch (error) {
+    console.error("Update telecaller error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };

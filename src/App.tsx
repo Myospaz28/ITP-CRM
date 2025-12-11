@@ -41,6 +41,10 @@ import ResponsesPage from './pages/Campaign/ResponsesPage';
 import StudentForm from './pages/Campaign/studentForm.jsx';
 import InquiryForm from './pages/Form/InquiryForm';
 import LeadStagePage from './pages/Master/LeadStagePage';
+import ActiveLeads from './pages/Call/ActiveLeads';
+import WinLeads from './pages/Call/WinLeads';
+import LoseLeads from './pages/Call/LoseLeads';
+import InvalidLeads from './pages/Call/InvalidLeads';
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -355,6 +359,43 @@ function App() {
               <DefaultLayout userRole={userRole}>
                 <PageTitle title="Report" />
                 <CallReport />
+              </DefaultLayout>
+            }
+          />
+          <Route
+            path="/activeleads"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Report" />
+                <ActiveLeads />
+              </DefaultLayout>
+            }
+          />
+
+            <Route
+            path="/winleads"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Report" />
+                <WinLeads />
+              </DefaultLayout>
+            }
+          />
+          <Route
+            path="/loseleads"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Report" />
+                <LoseLeads />
+              </DefaultLayout>
+            }
+          />
+             <Route
+            path="/invalidleads"
+            element={
+              <DefaultLayout userRole={userRole}>
+                <PageTitle title="Report" />
+                <InvalidLeads/>
               </DefaultLayout>
             }
           />

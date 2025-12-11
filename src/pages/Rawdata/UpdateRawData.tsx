@@ -70,15 +70,15 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
   area,
   sources: parentSources = [],
 }) => {
-  console.log('UpdateRawData Props:', {
-    showEditPopup,
-    editingClient,
-    categoriesCount: categories?.length,
-    referencesCount: references?.length,
-    areaCount: area?.length,
+  // console.log('UpdateRawData Props:', {
+  //   showEditPopup,
+  //   editingClient,
+  //   categoriesCount: categories?.length,
+  //   referencesCount: references?.length,
+  //   areaCount: area?.length,
 
-    editingClientData: editingClient,
-  });
+  //   editingClientData: editingClient,
+  // });
   const [sourceList, setSourceList] = useState<Source[]>(parentSources);
 
   const handleUpdateClient = async (editingClient: Client) => {
@@ -188,7 +188,7 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
         withCredentials: true, // important if backend uses session/auth
       });
 
-      console.log('Filtered sources:', res.data.sources || []);
+      // console.log('Filtered sources:', res.data.sources || []);
       setSourceList(res.data.sources || []);
     } catch (err) {
       console.error('Error fetching sources by reference', err);

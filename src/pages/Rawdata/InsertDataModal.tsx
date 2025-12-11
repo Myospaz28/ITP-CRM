@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
+import { useNavigate } from 'react-router-dom';
 
 interface Category {
   cat_id: number;
@@ -84,7 +85,7 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
   };
 
 
-
+  const navigate = useNavigate();
   const [sourceList, setSourceList] = useState([]);
   const [users, setUsers] = useState([]);
   // const [references, setReferences] = useState<Reference[]>([]);
@@ -131,6 +132,7 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
         });
         setShowAddPopup(false);
         fetchRawData();
+        navigate('/call');
       }
     } catch (err: any) {
       const backendMessage =
@@ -381,13 +383,12 @@ const handleDuplicateModalClose = () => {
 
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Area *
+                      ITP Center
                     </label>
                     <select
                       name="area_id"
                       value={singleFormData.area_id}
                       onChange={handleSingleFormChange}
-                      required
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
                     >
                       <option value="">Select area</option>
@@ -400,7 +401,7 @@ const handleDuplicateModalClose = () => {
                   </div>
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Assign User
+                      Assign User *
                     </label>
 
                     <select
@@ -408,6 +409,7 @@ const handleDuplicateModalClose = () => {
                       value={singleFormData.user_id || ''}
                       onChange={handleSingleFormChange}
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                      required
                     >
                       <option value="">Select user</option>
 

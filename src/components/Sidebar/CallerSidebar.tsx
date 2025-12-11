@@ -4,6 +4,7 @@ import SidebarLinkGroup from './SidebarLinkGroup';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
 import Logo from '../../images/logo/MMS_logo.png';
+import { PhoneOutgoing } from 'lucide-react';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -22,6 +23,21 @@ const CallerSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [sidebarExpanded, setSidebarExpanded] = useState(
     storedSidebarExpanded === null ? false : storedSidebarExpanded === 'true'
   );
+
+
+ const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Close other dropdowns when one opens, but keep current one open if clicking the same
+  const handleDropdownToggle = (menuName: string) => {
+    if (openDropdown === menuName) {
+      // If clicking the same dropdown, keep it open (or close it if you want toggle behavior)
+      setOpenDropdown(null); // Uncomment this if you want toggle behavior
+    } else {
+      // If clicking a different dropdown, close the previous one and open the new one
+      setOpenDropdown(menuName);
+    }
+  };
+
 
   const fetchTasks = async () => {
     try {
@@ -193,42 +209,7 @@ const CallerSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
 
                {/* <!-- Menu Item Call --> */}
-              <SidebarLinkGroup
-                activeCondition={
-                  pathname === '/call' || pathname.includes('call')
-                }
-              >
-                {(handleClick, open) => {
-                  return (
-                    <React.Fragment>
-                      <NavLink
-                        to="/call"
-                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                          (pathname === '/call' ||
-                            pathname.includes('call')) &&
-                          'bg-graydark dark:bg-meta-4'
-                        }`}
-                      >
-                        <svg 
-                          className="fill-current" 
-                          width="18" 
-                          height="18" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path 
-                            d="M6.6 3H3C2.44772 3 2 3.44772 2 4C2 14.4934 9.50659 22 20 22C20.5523 22 21 21.5523 21 21V17.4C21 16.8477 20.5523 16.4 20 16.4C18.1071 16.4 16.2936 15.9255 14.7023 15.0569C14.2548 14.8121 13.6979 14.9266 13.3614 15.3083L11.2529 17.7086C8.28549 16.1684 5.83164 13.7145 4.2914 10.7471L6.69174 8.63859C7.07342 8.30208 7.18789 7.74517 6.94306 7.29774C6.07446 5.70641 5.6 3.89294 5.6 2C5.6 1.44772 5.15228 1 4.6 1H4C3.44772 1 3 1.44772 3 2V6.6C3 7.15228 3.44772 7.6 4 7.6H6.6C7.15228 7.6 7.6 7.15228 7.6 6.6V4C7.6 3.44772 7.15228 3 6.6 3Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                        Call
-                       
-                      </NavLink>
-                    </React.Fragment>
-                  );
-                }}
-              </SidebarLinkGroup>
+              
               {/* <!-- Menu Item call --> */}
 
 
