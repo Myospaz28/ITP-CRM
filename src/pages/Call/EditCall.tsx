@@ -10,7 +10,12 @@ interface TeleCallerData {
   tc_call_duration: string;
   master_id: number;
   category: string;
-  selected_products?: number[]; 
+  selected_products?: number[];
+
+  stage_id?: number;
+  stage_name?: string;
+  lead_sub_stage_id?: number;
+  lead_sub_stage_name?: string;
 }
 
 interface Product {
@@ -54,55 +59,74 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
   const currentUserId =
     rawUserId && !isNaN(parseInt(rawUserId)) ? parseInt(rawUserId) : null;
 
-const loadStages = async () => {
-  try {
-    const res = await axios.get(`${BASE_URL}api/leadstages`, {
-      withCredentials: true,
-    });
+  const loadStages = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}api/leadstages`, {
+        withCredentials: true,
+      });
 
-    const stages = Array.isArray(res.data.data) ? res.data.data : [];
+      const stages = Array.isArray(res.data.data) ? res.data.data : [];
 
-    setStageList(stages);
+      setStageList(stages);
 
-    const map: any = {};
-    stages.forEach((stage: any) => {
-      if (stage?.stage_id && stage?.stage_name) {
-        map[stage.stage_id] = stage.stage_name;
+      const map: any = {};
+      stages.forEach((stage: any) => {
+        if (stage?.stage_id && stage?.stage_name) {
+          map[stage.stage_id] = stage.stage_name;
+        }
+      });
+      setStatusMap(map);
+
+      const currentStatus = data?.tc_status
+        ? data.tc_status.toLowerCase()
+        : null;
+
+      if (!currentStatus) {
+        console.warn('tc_status missing or empty in props:', data);
+        return;
       }
-    });
-    setStatusMap(map);
 
-   
-    const currentStatus = data?.tc_status ? data.tc_status.toLowerCase() : null;
+      const matchedStage = stages.find(
+        (s: any) =>
+          s?.stage_name && s.stage_name.toLowerCase() === currentStatus,
+      );
 
-    if (!currentStatus) {
-      console.warn("tc_status missing or empty in props:", data);
-      return;
+      if (matchedStage) {
+        setFormData((prev) => ({
+          ...prev,
+          call_status: matchedStage.stage_id,
+        }));
+
+        fetchSubStagesByStage(matchedStage.stage_id);
+      }
+    } catch (error) {
+      console.error('Error fetching stages:', error);
     }
-
-    const matchedStage = stages.find(
-      (s: any) =>
-        s?.stage_name &&
-        s.stage_name.toLowerCase() === currentStatus
-    );
-
-    if (matchedStage) {
-      setFormData((prev) => ({
-        ...prev,
-        call_status: matchedStage.stage_id,
-      }));
-
-      fetchSubStagesByStage(matchedStage.stage_id);
-    }
-  } catch (error) {
-    console.error("Error fetching stages:", error);
-  }
-};
-
+  };
 
   useEffect(() => {
     loadStages();
   }, []);
+
+  useEffect(() => {
+    if (!stageList.length || !data.stage_id) return;
+
+    // Prefill Stage (Lead Stage)
+    setFormData((prev) => ({
+      ...prev,
+      call_status: data.stage_id.toString(),
+    }));
+
+    // Load Sub Stages for this Stage
+    fetchSubStagesByStage(data.stage_id);
+  }, [stageList, data]);
+
+  useEffect(() => {
+    if (!subStageList.length || !data.lead_sub_stage_id) return;
+
+    // Prefill Sub-Stage
+    setSelectedRawStatus(String(data.lead_sub_stage_id));
+  }, [subStageList, data]);
 
   useEffect(() => {
     if (data.selected_products) {
@@ -298,7 +322,7 @@ const loadStages = async () => {
                 fetchSubStagesByStage(value);
               }}
             >
-              <option value=""> Select Lead Stage</option>
+              <option value="">Select Lead Stage</option>
               {stageList.map((stage) => (
                 <option key={stage.stage_id} value={stage.stage_id}>
                   {stage.stage_name}
@@ -311,50 +335,35 @@ const loadStages = async () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Sub Stage
             </label>
+
             <select
               name="selected_raw_status"
               className="w-full p-2 border border-gray-300 rounded"
               value={selectedRawStatus}
               onChange={(e) => setSelectedRawStatus(e.target.value)}
+              disabled={!formData.call_status}
             >
-              <option value="">Select Sub Stage</option>
-              {subStageList.map((subStage: any) => (
-                <option
-                  key={subStage.lead_sub_stage_id}
-                  value={subStage.lead_sub_stage_id}
-                >
-                  {subStage.lead_sub_stage_name}
-                </option>
-              ))}
+              {/* Default option */}
+              <option value="">
+                {formData.call_status
+                  ? 'Select Sub Stage'
+                  : 'Select Stage First'}
+              </option>
+
+              {/* Show list only when available */}
+              {subStageList.length > 0
+                ? subStageList.map((subStage: any) => (
+                    <option
+                      key={subStage.lead_sub_stage_id}
+                      value={subStage.lead_sub_stage_id}
+                    >
+                      {subStage.lead_sub_stage_name}
+                    </option>
+                  ))
+                : // If stage selected but data not loaded yet
+                  formData.call_status && <option>Loading...</option>}
             </select>
           </div>
-
-          {/* Product List */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Products
-            </label>
-
-            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border p-2 rounded">
-         {productList?.map((product) => (
-  <label key={product.product_id} className="flex items-center gap-2">
-    <input
-      type="checkbox"
-      value={product.product_id}
-      checked={selectedProducts.includes(product.product_id)}
-      onChange={(e) =>
-        handleProductSelection(
-          product.product_id,
-          e.target.checked
-        )
-      }
-    />
-    {product.product_name}
-  </label>
-))}
-
-            </div>
-          </div> */}
         </div>
 
         {/* Sub Status + Duration */}
