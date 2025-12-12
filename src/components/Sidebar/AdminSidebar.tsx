@@ -300,7 +300,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               Center
                             </NavLink>
                           </li>
-                          <li>
+                          {/* <li>
                             <NavLink
                               to="/inquiry-form"
                               className={({ isActive }) =>
@@ -314,7 +314,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               <Map className="w-4 h-4" />
                               Form
                             </NavLink>
-                          </li>
+                          </li> */}
                         </ul>
                       </div>
                       {/* <!-- Dropdown Menu End --> */}
@@ -510,7 +510,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               {/* <!-- Menu Item: Invalid --> */}
 
               {/* <!-- Menu Item Campaign --> */}
-              <SidebarLinkGroup
+              {/* <SidebarLinkGroup
                 activeCondition={
                   pathname === '/followup' || pathname.includes('followup')
                 }
@@ -543,7 +543,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                           }`}
                         />
                       </NavLink>
-                      {/* <!-- Dropdown Menu Start --> */}
+                    
                       <div
                         className={`translate transform overflow-hidden transition-all duration-300 ${
                           openDropdown !== 'campaign' && 'hidden'
@@ -582,11 +582,11 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                           </li>
                         </ul>
                       </div>
-                      {/* <!-- Dropdown Menu End --> */}
+                    
                     </React.Fragment>
                   );
                 }}
-              </SidebarLinkGroup>
+              </SidebarLinkGroup> */}
               {/* <!-- Menu Item Campaign --> */}
 
               {/* <!-- Menu Item: Follow-up List --> */}

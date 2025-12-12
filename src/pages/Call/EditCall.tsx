@@ -282,7 +282,7 @@ const loadStages = async () => {
           {/* Call Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lead Stage
+              Select Lead Stage
             </label>
             <select
               name="call_status"
@@ -298,7 +298,7 @@ const loadStages = async () => {
                 fetchSubStagesByStage(value);
               }}
             >
-              <option value="">Select Status</option>
+              <option value=""> Select Lead Stage</option>
               {stageList.map((stage) => (
                 <option key={stage.stage_id} value={stage.stage_id}>
                   {stage.stage_name}
@@ -317,7 +317,7 @@ const loadStages = async () => {
               value={selectedRawStatus}
               onChange={(e) => setSelectedRawStatus(e.target.value)}
             >
-              <option value="">Select Status</option>
+              <option value="">Select Sub Stage</option>
               {subStageList.map((subStage: any) => (
                 <option
                   key={subStage.lead_sub_stage_id}

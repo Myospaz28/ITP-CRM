@@ -122,8 +122,15 @@ const LeadDetailsPage: React.FC<LeadDetailsPageProps> = ({ masterId, onBack }) =
                       <td className="p-2">{log.new_leads}</td>
                       <td className="p-2">{log.new_sub_leads}</td>
                       <td className="p-2">{log.remark || 'No remark'}</td>
-                      <td className="p-2">
-                        {new Date(log.updated_at).toLocaleString()}
+                     <td className="p-2">
+                        {new Date(log.updated_at).toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
                       </td>
                     </tr>
                   ))}

@@ -281,8 +281,16 @@ export const importRawData = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized!' });
 
     const file = req.file;
-    const { cat_id, reference, source_id, assignedTo, remark, assignType } =
-      req.body;
+    const {
+      cat_id,
+      reference,
+      source_id,
+      assignedTo,
+      remark,
+      assignType,
+      lead_stage,
+      lead_sub_stage,
+    } = req.body;
     const created_by_user = req.session.user.id;
 
     if (!file || !cat_id || !reference || !source_id || !assignType) {
@@ -338,12 +346,14 @@ export const importRawData = async (req, res) => {
       source_id,
       created_by_user,
       'Not Assigned', // Default before assignment
+      lead_stage, // 👍 ID save hoga
+      lead_sub_stage,
     ]);
 
     await connection.query(
       `INSERT INTO raw_data 
       (name, number, email, address, qualification, passout_year, created_at,
-       cat_id, reference_id, source_id, created_by_user, status)
+       cat_id, reference_id, source_id, created_by_user, status,lead_stage_id, lead_sub_stage_id)
       VALUES ?`,
       [bulkValues],
     );
@@ -448,7 +458,6 @@ export const importRawData = async (req, res) => {
   }
 };
 
-
 export const updateRawData = async (req, res) => {
   try {
     const { master_id } = req.params;
@@ -552,9 +561,6 @@ export const deleteMultipleClients = async (req, res) => {
   }
 };
 
-
-
-
 export const getAllRawData = async (req, res) => {
   try {
     const query = `
@@ -578,8 +584,6 @@ export const getAllRawData = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch Master Data' });
   }
 };
-
-
 
 export const addSingleRawData = async (req, res) => {
   try {
@@ -701,17 +705,6 @@ export const addSingleRawData = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
 export const getLeadStageLogsWithAssignment = async (req, res) => {
   const { master_id } = req.params;
 
@@ -732,11 +725,11 @@ export const getLeadStageLogsWithAssignment = async (req, res) => {
        LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
        LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
        WHERE rd.master_id = ?`,
-      [master_id]
+      [master_id],
     );
 
     if (!leadInfo) {
-      return res.status(404).json({ message: "Lead not found" });
+      return res.status(404).json({ message: 'Lead not found' });
     }
 
     // 2️⃣ Fetch stage change logs
@@ -752,7 +745,7 @@ export const getLeadStageLogsWithAssignment = async (req, res) => {
        FROM lead_stage_logs
        WHERE master_id = ?
        ORDER BY updated_at DESC`,
-      [master_id]
+      [master_id],
     );
 
     // 3️⃣ Fetch assignment details
@@ -770,7 +763,7 @@ export const getLeadStageLogsWithAssignment = async (req, res) => {
        WHERE a.assign_id = (
            SELECT assign_id FROM raw_data WHERE master_id = ?
        )`,
-      [master_id]
+      [master_id],
     );
 
     return res.json({
@@ -779,22 +772,16 @@ export const getLeadStageLogsWithAssignment = async (req, res) => {
       logs: logs,
       assignment: assignment || null,
     });
-
   } catch (error) {
-    console.error("Error fetching lead logs:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error fetching lead logs:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
-
-
-
-
 
 export const getAllWinRawData = async (req, res) => {
   try {
     if (!req.session.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { id: userId, role } = req.session.user;
@@ -853,29 +840,27 @@ export const getAllWinRawData = async (req, res) => {
 
       WHERE rd.status = 'Assigned'
         AND rd.lead_status = 'Win'
-        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+        ${role === 'tele-caller' ? 'AND asg.assigned_to_user_id = ?' : ''}
 
       GROUP BY rd.master_id
       ORDER BY rd.master_id DESC
     `;
 
-    const params = role === "tele-caller" ? [userId] : [];
+    const params = role === 'tele-caller' ? [userId] : [];
     const [rows] = await db.query(query, params);
 
     res.json(rows);
-
   } catch (error) {
-    console.error("❌ getAllActiveAssignedRawData Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error('❌ getAllActiveAssignedRawData Error:', error);
+    res.status(500).json({ message: 'Server Error' });
   }
 };
-
 
 //lose Leads
 export const getAllLoseRawData = async (req, res) => {
   try {
     if (!req.session.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { id: userId, role } = req.session.user;
@@ -934,29 +919,27 @@ export const getAllLoseRawData = async (req, res) => {
 
       WHERE rd.status = 'Assigned'
         AND rd.lead_status = 'Lose'
-        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+        ${role === 'tele-caller' ? 'AND asg.assigned_to_user_id = ?' : ''}
 
       GROUP BY rd.master_id
       ORDER BY rd.master_id DESC
     `;
 
-    const params = role === "tele-caller" ? [userId] : [];
+    const params = role === 'tele-caller' ? [userId] : [];
     const [rows] = await db.query(query, params);
 
     res.json(rows);
-
   } catch (error) {
-    console.error("❌ getAllActiveAssignedRawData Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error('❌ getAllActiveAssignedRawData Error:', error);
+    res.status(500).json({ message: 'Server Error' });
   }
 };
-
 
 //invalid leads
 export const getAllInvalidRawData = async (req, res) => {
   try {
     if (!req.session.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { id: userId, role } = req.session.user;
@@ -1015,23 +998,21 @@ export const getAllInvalidRawData = async (req, res) => {
 
       WHERE rd.status = 'Assigned'
         AND rd.lead_status = 'Invalid'
-        ${role === "tele-caller" ? "AND asg.assigned_to_user_id = ?" : ""}
+        ${role === 'tele-caller' ? 'AND asg.assigned_to_user_id = ?' : ''}
 
       GROUP BY rd.master_id
       ORDER BY rd.master_id DESC
     `;
 
-    const params = role === "tele-caller" ? [userId] : [];
+    const params = role === 'tele-caller' ? [userId] : [];
     const [rows] = await db.query(query, params);
 
     res.json(rows);
-
   } catch (error) {
-    console.error("❌ getAllActiveAssignedRawData Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error('❌ getAllActiveAssignedRawData Error:', error);
+    res.status(500).json({ message: 'Server Error' });
   }
 };
-
 
 export const updateLeadWithStageLogs = async (req, res) => {
   const {
@@ -1069,7 +1050,7 @@ export const updateLeadWithStageLogs = async (req, res) => {
     );
 
     if (!oldLead.length)
-      return res.status(404).json({ message: "Lead not found" });
+      return res.status(404).json({ message: 'Lead not found' });
 
     const previousStageId = oldLead[0].lead_stage_id;
     const previousSubStageId = oldLead[0].lead_sub_stage_id;
@@ -1140,12 +1121,13 @@ export const updateLeadWithStageLogs = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Lead updated successfully",
-      logs_added: previousStageId !== lead_stage_id || previousSubStageId !== lead_sub_stage_id,
+      message: 'Lead updated successfully',
+      logs_added:
+        previousStageId !== lead_stage_id ||
+        previousSubStageId !== lead_sub_stage_id,
     });
   } catch (error) {
-    console.error("Error updating lead:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error updating lead:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-

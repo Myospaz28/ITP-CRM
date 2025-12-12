@@ -208,12 +208,12 @@ const User_list = () => {
                       >
                        <FontAwesomeIcon icon={faEdit} className="text-white" />
                       </button>
-                      <button
+                      {/* <button
                         className="inline-flex items-center justify-center rounded-md py-1 px-3 text-center text-white hover:bg-opacity-75 bg-black"
                         onClick={() => handleDelete(user.user_id)}
                       >
                         <FontAwesomeIcon icon={faTrash} className="text-white" />
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>

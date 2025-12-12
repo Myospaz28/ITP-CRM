@@ -81,9 +81,11 @@ const UpdateActiveLeads = ({
       console.error('Error fetching sources', err);
     }
   };
-  useEffect(() => {
-    fetchSourcesByReference(selectedReference);
-  }, [selectedReference]);
+ useEffect(() => {
+  if (formData.reference_id) {
+    fetchSourcesByReference(formData.reference_id);
+  }
+}, [formData.reference_id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -409,7 +411,7 @@ const UpdateActiveLeads = ({
                   </div>
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Area
+                     Center
                     </label>
                     <select
                       name="area_id"
@@ -417,7 +419,7 @@ const UpdateActiveLeads = ({
                       onChange={handleInputChange}
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
                     >
-                      <option value="">Select area</option>
+                      <option value="">Select Center</option>
                       {areaList.map((area) => (
                         <option key={area.area_id} value={area.area_id}>
                           {area.area_name}

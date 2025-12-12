@@ -390,7 +390,7 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
 
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Area
+                     Center
                     </label>
                     <select
                       name="area_id"
@@ -398,7 +398,7 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
                       onChange={handleInputChange}
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
                     >
-                      <option value="">Select area</option>
+                      <option value="">Select Center</option>
                       {area?.map((areaItem) => (
                         <option key={areaItem.area_id} value={areaItem.area_id}>
                           {areaItem.area_name}
