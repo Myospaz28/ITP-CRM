@@ -7,7 +7,8 @@ import {
   useNavigate,
 } from 'react-router-dom';
 import axios from 'axios';
-
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Loader from './common/Loader';
 import PageTitle from './components/PageTitle';
 import SignIn from './pages/Authentication/SignIn';
@@ -45,6 +46,11 @@ import ActiveLeads from './pages/Call/ActiveLeads';
 import WinLeads from './pages/Call/WinLeads';
 import LoseLeads from './pages/Call/LoseLeads';
 import InvalidLeads from './pages/Call/InvalidLeads';
+import TeamLeadTeleCaller from './pages/Call/TeamLeadTeleCaller';
+import NewLeads from './pages/Call/NewLeads';
+import AddNewLead from './pages/Rawdata/AddNewLead';
+import FollowUpLeads from './pages/Call/FollowUpLeads';
+import AllLeads from './pages/Call/AllLeads';
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -107,303 +113,353 @@ function App() {
   return loading ? (
     <Loader />
   ) : (
-    <Routes>
-      {/* <Route path="/signin" element={<InquiryForm />} /> */}
-      <Route path="/signin" element={<SignIn handleLogin={handleLogin} />} />
-      
-      <Route
-        path="/followup/campaign/student/:id"
-        element={
+    <>
+      <ToastContainer position="top-right" autoClose={3000} />
+
+      <Routes>
+        {/* <Route path="/signin" element={<InquiryForm />} /> */}
+        <Route path="/signin" element={<SignIn handleLogin={handleLogin} />} />
+
+        <Route
+          path="/followup/campaign/student/:id"
+          element={
+            <>
+              <PageTitle title="Preview Campaign" />
+              <StudentForm />
+            </>
+          }
+        />
+
+        {isAuthenticated ? (
           <>
-            <PageTitle title="Preview Campaign" />
-            <StudentForm />
-          </>
-        }
-      />
-
-      {isAuthenticated ? (
-        <>
-          <Route
-            path="/dashboard"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Dashboard" />
-                <ECommerce />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/master/category"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="category" />
-                <Category />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/master/product"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="product" />
-                <Product />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/upload-document/:product_id"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Upload Document" />
-                <UploadDocument />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/master/reference"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="reference" />
-                <Reference />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/master/area"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="area" />
-                <Area />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/user/add-user"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Add user" />
-                <Add_user />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/user/user-list"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="User List" />
-                <User_list />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/master-data"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Master Data" />
-                <Raw_data />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/inquiry-form"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Master Data" />
-                <InquiryForm/>
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/client/add-client"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Add Client" />
-                <AddClient />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/client/client-list"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Client List" />
-                <Client_list />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/followup/followup-list"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Followup Record" />
-                <Followup />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/followup/meeting-scheduled"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Followup Record" />
-                <MarketingProduct />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/followup/campaign-page"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Create Campaign" />
-                <CampaignPage />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/followup/view-campaign"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="View Campaign" />
-                <ViewCampaign />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/followup/campaign/responses/:id"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Campaign Responses" />
-                <ResponsesPage />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/marketing-management/followup"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Followup Record" />
-                <Followup />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/marketing-management/meeting-scheduled"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Product Marketing" />
-                <MarketingProduct />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/marketing-management/meeting-scheduled"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Meeting Schedule" />
-                <User_list />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/call"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Call" />
-                <Call />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/visit"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Visit" />
-                <Visit />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/followup/campaign/preview/:id"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Preview Campaign" />
-                <PreviewPage />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/master/leadstage"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Lead Stage" />
-                <LeadStagePage />
-              </DefaultLayout>
-            }
-          />
-
-          <Route
-            path="/report/call"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Report" />
-                <CallReport />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/activeleads"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Report" />
-                <ActiveLeads />
-              </DefaultLayout>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Dashboard" />
+                  <ECommerce />
+                </DefaultLayout>
+              }
+            />
 
             <Route
-            path="/winleads"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Report" />
-                <WinLeads />
-              </DefaultLayout>
-            }
-          />
-          <Route
-            path="/loseleads"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Report" />
-                <LoseLeads />
-              </DefaultLayout>
-            }
-          />
-             <Route
-            path="/invalidleads"
-            element={
-              <DefaultLayout userRole={userRole}>
-                <PageTitle title="Report" />
-                <InvalidLeads/>
-              </DefaultLayout>
-            }
-          />
-        </>
-      ) : (
-        <Route path="/signin" element={<Navigate to="/signin" />} />
-      )}
-    </Routes>
+              path="/master/category"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="category" />
+                  <Category />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/master/product"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="product" />
+                  <Product />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/upload-document/:product_id"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Upload Document" />
+                  <UploadDocument />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/master/reference"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="reference" />
+                  <Reference />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/master/area"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="area" />
+                  <Area />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/user/add-user"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Add user" />
+                  <Add_user />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/user/user-list"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="User List" />
+                  <User_list />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/master-data"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Master Data" />
+                  <Raw_data />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/inquiry-form"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Master Data" />
+                  <InquiryForm />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/client/add-client"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Add Client" />
+                  <AddClient />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/client/client-list"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Client List" />
+                  <Client_list />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/followup/followup-list"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Followup Record" />
+                  <Followup />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/followup/meeting-scheduled"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Followup Record" />
+                  <MarketingProduct />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/followup/campaign-page"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Create Campaign" />
+                  <CampaignPage />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/followup/view-campaign"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="View Campaign" />
+                  <ViewCampaign />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/followup/campaign/responses/:id"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Campaign Responses" />
+                  <ResponsesPage />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/marketing-management/followup"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Followup Record" />
+                  <Followup />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/marketing-management/meeting-scheduled"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Product Marketing" />
+                  <MarketingProduct />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/marketing-management/meeting-scheduled"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Meeting Schedule" />
+                  <User_list />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/call"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Call" />
+                  <Call />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/visit"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Visit" />
+                  <Visit />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/followup/campaign/preview/:id"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Preview Campaign" />
+                  <PreviewPage />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/master/leadstage"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Lead Stage" />
+                  <LeadStagePage />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/report/call"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <CallReport />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/activeleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <ActiveLeads />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/winleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <WinLeads />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/loseleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <LoseLeads />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/invalidleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <InvalidLeads />
+                </DefaultLayout>
+              }
+            />
+
+            <Route
+              path="/team-lead-telecallers"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <TeamLeadTeleCaller />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/newlead"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <NewLeads />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/add-newlead"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <AddNewLead />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/followupleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <FollowUpLeads />
+                </DefaultLayout>
+              }
+            />
+            <Route
+              path="/allleads"
+              element={
+                <DefaultLayout userRole={userRole}>
+                  <PageTitle title="Report" />
+                  <AllLeads />
+                </DefaultLayout>
+              }
+            />
+          </>
+        ) : (
+          <Route path="/signin" element={<Navigate to="/signin" />} />
+        )}
+      </Routes>
+    </>
   );
 }
 

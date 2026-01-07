@@ -1,6 +1,7 @@
 //updateRawData.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { BASE_URL } from '../../../public/config.js';
 
 interface Category {
@@ -105,20 +106,20 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
           created_by_user: editingClient.created_by_user,
           lead_activity: editingClient.lead_activity,
         },
-        {
-          withCredentials: true,
-        },
+        { withCredentials: true },
       );
 
       if (response.status === 200) {
-        alert('Client updated successfully');
+        toast.success('Client updated successfully');
         fetchRawData();
         return { success: true, message: 'Client updated successfully' };
       } else {
+        toast.error('Failed to update client');
         return { success: false, message: 'Failed to update client' };
       }
     } catch (error) {
       console.error('Update failed:', error);
+      toast.error('Failed to update client');
       return { success: false, message: 'Failed to update client' };
     }
   };
@@ -390,7 +391,7 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
 
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                     Center
+                      Center
                     </label>
                     <select
                       name="area_id"
@@ -417,7 +418,7 @@ const UpdateRawData: React.FC<UpdateDataModalProps> = ({
               type="submit"
               className="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded text-sm font-medium transition duration-200"
             >
-              Update 
+              Update
             </button>
             <button
               type="button"

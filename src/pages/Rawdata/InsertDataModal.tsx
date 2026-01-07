@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 interface Category {
@@ -35,11 +36,10 @@ interface InsertDataModalProps {
     user_id: string;
     showDuplicateModal: boolean;
     duplicateEntries: any[];
-
   };
   setSingleFormData: (data: any) => void;
   categories: Category[];
-  references: Reference[];       // <-- ADDED
+  references: Reference[]; // <-- ADDED
   area: Area[];
   fetchRawData: () => void;
   setError: (error: string) => void;
@@ -59,20 +59,21 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
   setError,
   setDuplicateEntries,
   setShowDuplicateModal,
-  showDuplicateModal,      
-  duplicateEntries   
+  showDuplicateModal,
+  duplicateEntries,
 }) => {
-
   const handleSingleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
 
-    if (name === "reference_id") {
+    if (name === 'reference_id') {
       setSingleFormData((prev) => ({
         ...prev,
         reference_id: value,
-        source_id: "",
+        source_id: '',
       }));
       fetchSourcesByReference(value);
       return;
@@ -84,11 +85,22 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
     }));
   };
 
-
   const navigate = useNavigate();
   const [sourceList, setSourceList] = useState([]);
   const [users, setUsers] = useState([]);
+  const [userRole, setUserRole] = useState<string>('');
   // const [references, setReferences] = useState<Reference[]>([]);
+
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}auth/get-role`, { withCredentials: true })
+      .then((res) => {
+        setUserRole(res.data.role); // admin | team-lead | tele-caller
+      })
+      .catch(() => {
+        setUserRole('');
+      });
+  }, []);
 
   const handleAddSingleSubmit = async (
     event: React.FormEvent<HTMLFormElement>,
@@ -115,7 +127,8 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
       );
 
       if (response.status === 200) {
-        alert('Client added successfully.');
+        // ✅ SUCCESS TOAST
+        toast.success('Client added successfully');
 
         setSingleFormData({
           name: '',
@@ -130,6 +143,7 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
           area_id: '',
           user_id: '',
         });
+
         setShowAddPopup(false);
         fetchRawData();
         navigate('/call');
@@ -144,6 +158,8 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
         setDuplicateEntries(duplicates);
         setShowDuplicateModal(true);
       } else {
+        // ❌ ERROR TOAST
+        toast.error(backendMessage);
         setError(backendMessage);
       }
     }
@@ -161,10 +177,9 @@ const InsertDataModal: React.FC<InsertDataModalProps> = ({
     }
   };
 
-useEffect(() => {
-  fetchUsers();
-}, []);
-
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const fetchSources = async () => {
     try {
@@ -177,31 +192,28 @@ useEffect(() => {
     }
   };
 
- 
-const fetchSourcesByReference = async (referenceId: string) => {
-  if (!referenceId) {
-    setSourceList([]);
-    return;
-  }
+  const fetchSourcesByReference = async (referenceId: string) => {
+    if (!referenceId) {
+      setSourceList([]);
+      return;
+    }
 
-  try {
-    const res = await axios.get(`${BASE_URL}api/source/${referenceId}`, {
-      withCredentials: true,  
-    });
+    try {
+      const res = await axios.get(`${BASE_URL}api/source/${referenceId}`, {
+        withCredentials: true,
+      });
 
-    // console.log("sources", res);
-    setSourceList(res.data.sources || []);
-  } catch (err) {
-    console.error("Error fetching sources", err);
-  }
-};
+      // console.log("sources", res);
+      setSourceList(res.data.sources || []);
+    } catch (err) {
+      console.error('Error fetching sources', err);
+    }
+  };
 
-const handleDuplicateModalClose = () => {
-  setShowDuplicateModal(false);
-  setDuplicateEntries([]);
-};
-
-
+  const handleDuplicateModalClose = () => {
+    setShowDuplicateModal(false);
+    setDuplicateEntries([]);
+  };
 
   if (!showAddPopup) return null;
 
@@ -258,28 +270,26 @@ const handleDuplicateModalClose = () => {
 
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Email *
+                      Email
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={singleFormData.email}
                       onChange={handleSingleFormChange}
-                      required
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
                     />
                   </div>
 
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Address *
+                      Address
                     </label>
                     <textarea
                       name="address"
                       value={singleFormData.address}
                       onChange={handleSingleFormChange}
                       rows={2}
-                      required
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
                     />
                   </div>
@@ -362,7 +372,7 @@ const handleDuplicateModalClose = () => {
                   </div>
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                      Source
+                      Source *
                     </label>
 
                     <select
@@ -370,6 +380,7 @@ const handleDuplicateModalClose = () => {
                       value={singleFormData.source_id || ''}
                       onChange={handleSingleFormChange}
                       className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                      required
                     >
                       <option value="">Select source</option>
 
@@ -399,27 +410,29 @@ const handleDuplicateModalClose = () => {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block mb-1 text-sm dark:text-white">
-                      Assign User *
-                    </label>
+                  {userRole === 'admin' && (
+                    <div>
+                      <label className="block mb-1 text-sm dark:text-white">
+                        Assign User *
+                      </label>
 
-                    <select
-                      name="user_id"
-                      value={singleFormData.user_id || ''}
-                      onChange={handleSingleFormChange}
-                      className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                      required
-                    >
-                      <option value="">Select user</option>
+                      <select
+                        name="user_id"
+                        value={singleFormData.user_id || ''}
+                        onChange={handleSingleFormChange}
+                        className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                        required
+                      >
+                        <option value="">Select user</option>
 
-                      {users.map((user) => (
-                        <option key={user.user_id} value={user.user_id}>
-                          {user.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                        {users.map((user) => (
+                          <option key={user.user_id} value={user.user_id}>
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -443,106 +456,107 @@ const handleDuplicateModalClose = () => {
           </div>
         </form>
 
-           {/* Duplicate Entries Modal */}
-      {showDuplicateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 px-4">
-          <div
-            className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[75vh] overflow-auto 
+        {/* Duplicate Entries Modal */}
+        {showDuplicateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 px-4">
+            <div
+              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[75vh] overflow-auto 
       dark:border-strokedark dark:bg-boxdark"
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center border-b mb-4 pb-2 dark:border-strokedark">
-              <h2 className="text-xl font-bold dark:text-white">
-                Duplicate Entries Found
-              </h2>
-              <button
-                onClick={handleDuplicateModalClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                ×
-              </button>
-            </div>
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center border-b mb-4 pb-2 dark:border-strokedark">
+                <h2 className="text-xl font-bold dark:text-white">
+                  Duplicate Entries Found
+                </h2>
+                <button
+                  onClick={handleDuplicateModalClose}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  ×
+                </button>
+              </div>
 
-            {/* Message */}
-            <p className="text-red-600 dark:text-red-400 font-semibold mb-4">
-              {duplicateEntries.length} duplicate entries found in your import
-              file. Please review the duplicates:
-            </p>
+              {/* Message */}
+              <p className="text-red-600 dark:text-red-400 font-semibold mb-4">
+                {duplicateEntries.length} duplicate entries found in your import
+                file. Please review the duplicates:
+              </p>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
-                <thead>
-                  <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
-                    <th className="border px-3 py-2">Row</th>
-                    <th className="border px-3 py-2">Name</th>
-                    <th className="border px-3 py-2">Email</th>
-                    <th className="border px-3 py-2">Contact</th>
-                    <th className="border px-3 py-2">Issue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {duplicateEntries.map((entry, index) => (
-                    <tr
-                      key={index}
-                      className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <td className="border px-3 py-2">
-                        {entry.row || index + 1}
-                      </td>
-                      <td className="border px-3 py-2">
-                        {entry.name || 'N/A'}
-                      </td>
-                      <td className="border px-3 py-2">
-                        {entry.email ? (
-                          <span className="text-red-600 font-semibold">
-                            {entry.email}
-                          </span>
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
-                      <td className="border px-3 py-2">
-                        {entry.number || entry.contact ? (
-                          <span className="text-red-600 font-semibold">
-                            {entry.number || entry.contact}
-                          </span>
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
-                      <td className="border px-3 py-2">
-                        {entry.email && entry.number ? (
-                          <span className="text-red-600 font-semibold">
-                            Email & Contact both exist
-                          </span>
-                        ) : entry.email ? (
-                          <span className="text-orange-600">Email exists</span>
-                        ) : (
-                          <span className="text-orange-600">
-                            Contact exists
-                          </span>
-                        )}
-                      </td>
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
+                  <thead>
+                    <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
+                      <th className="border px-3 py-2">Row</th>
+                      <th className="border px-3 py-2">Name</th>
+                      <th className="border px-3 py-2">Email</th>
+                      <th className="border px-3 py-2">Contact</th>
+                      <th className="border px-3 py-2">Issue</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {duplicateEntries.map((entry, index) => (
+                      <tr
+                        key={index}
+                        className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <td className="border px-3 py-2">
+                          {entry.row || index + 1}
+                        </td>
+                        <td className="border px-3 py-2">
+                          {entry.name || 'N/A'}
+                        </td>
+                        <td className="border px-3 py-2">
+                          {entry.email ? (
+                            <span className="text-red-600 font-semibold">
+                              {entry.email}
+                            </span>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                        <td className="border px-3 py-2">
+                          {entry.number || entry.contact ? (
+                            <span className="text-red-600 font-semibold">
+                              {entry.number || entry.contact}
+                            </span>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                        <td className="border px-3 py-2">
+                          {entry.email && entry.number ? (
+                            <span className="text-red-600 font-semibold">
+                              Email & Contact both exist
+                            </span>
+                          ) : entry.email ? (
+                            <span className="text-orange-600">
+                              Email exists
+                            </span>
+                          ) : (
+                            <span className="text-orange-600">
+                              Contact exists
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCancelImport}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                Cancel Import
-              </button>
+              {/* Buttons */}
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={handleCancelImport}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Cancel Import
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
+        )}
       </div>
     </div>
   );

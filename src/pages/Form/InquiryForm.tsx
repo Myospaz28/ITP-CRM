@@ -1,4 +1,3 @@
-
 // import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 // import axios from 'axios';
 // import { BASE_URL } from '../../../public/config.js';
@@ -237,9 +236,6 @@
 
 // export default InquiryForm;
 
-
-
-
 // import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 // import axios from 'axios';
 // import { BASE_URL } from '../../../public/config.js';
@@ -468,7 +464,6 @@
 //         </div>
 
 //         {/* COURSE */}
-      
 
 //         {/* SUBMIT BTN */}
 //         <button
@@ -487,9 +482,6 @@
 
 // export default InquiryForm;
 
-
-
-
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
@@ -501,10 +493,13 @@ interface InquiryFormState {
   email: string;
   education_qualification: string;
   passout_year: string;
-  itp_center: string;      // area_id
-  reference_name: string;  // reference_id
-  source_name: string;     // source_id
+  itp_center: string; // area_id
+  reference_name: string; // reference_id
+  source_name: string; // source_id
   course_interest: string; // cat_id
+  option?: string;
+  remark?: string;
+  other?: string;
 }
 
 interface CategoryType {
@@ -540,6 +535,9 @@ const InquiryForm: React.FC = () => {
     reference_name: '',
     source_name: '',
     course_interest: '',
+    option: '',
+    remark: '',
+    other: '',
   });
 
   const [categories, setCategories] = useState<CategoryType[]>([]);
@@ -553,42 +551,50 @@ const InquiryForm: React.FC = () => {
 
   // CATEGORY
   useEffect(() => {
-    axios.get(`${BASE_URL}api/category`)
-      .then(res => setCategories(res.data))
-      .catch(err => console.error('Category Error:', err));
+    axios
+      .get(`${BASE_URL}api/category`)
+      .then((res) => setCategories(res.data))
+      .catch((err) => console.error('Category Error:', err));
   }, []);
 
   // REFERENCE
   useEffect(() => {
-    axios.get(`${BASE_URL}api/reference`)
-      .then(res => setReferences(res.data))
-      .catch(err => console.error('Reference Error:', err));
+    axios
+      .get(`${BASE_URL}api/reference`)
+      .then((res) => setReferences(res.data))
+      .catch((err) => console.error('Reference Error:', err));
   }, []);
 
   // AREA
   useEffect(() => {
-    axios.get(`${BASE_URL}api/area`)
-      .then(res => setAreas(res.data))
-      .catch(err => console.error('Area Error:', err));
+    axios
+      .get(`${BASE_URL}api/area`)
+      .then((res) => setAreas(res.data))
+      .catch((err) => console.error('Area Error:', err));
   }, []);
 
   // SOURCE
   useEffect(() => {
-    axios.get(`${BASE_URL}api/source`)
-      .then(res => setSources(res.data))
-      .catch(err => console.error('Source Error:', err));
+    axios
+      .get(`${BASE_URL}api/source`)
+      .then((res) => setSources(res.data))
+      .catch((err) => console.error('Source Error:', err));
   }, []);
 
   // HANDLE CHANGE
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
 
     setFormData({ ...formData, [name]: value });
 
-    if (name === "reference_name") {
-      const filtered = sources.filter(src => src.reference_id.toString() === value);
+    if (name === 'reference_name') {
+      const filtered = sources.filter(
+        (src) => src.reference_id.toString() === value,
+      );
       setFilteredSources(filtered);
-      setFormData(prev => ({ ...prev, source_name: '' }));
+      setFormData((prev) => ({ ...prev, source_name: '' }));
     }
   };
 
@@ -599,10 +605,10 @@ const InquiryForm: React.FC = () => {
 
     try {
       const res = await axios.post(`${BASE_URL}api/inquiry`, formData, {
-        headers: { 'x-api-key': API_KEY }
+        headers: { 'x-api-key': API_KEY },
       });
 
-      alert("✔ " + res.data.message);
+      alert('✔ ' + res.data.message);
 
       setFormData({
         full_name: '',
@@ -617,10 +623,9 @@ const InquiryForm: React.FC = () => {
         course_interest: '',
       });
       setFilteredSources([]);
-
     } catch (err) {
       console.error(err);
-      alert("❌ Something went wrong");
+      alert('❌ Something went wrong');
     }
 
     setLoading(false);
@@ -632,16 +637,22 @@ const InquiryForm: React.FC = () => {
         Inquiry Form
       </h2>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
         {/* AUTO INPUT FIELDS */}
         {[
-          "full_name", "city", "mobile", "email",
-          "education_qualification", "passout_year"
-        ].map(key => (
+          'full_name',
+          'city',
+          'mobile',
+          'email',
+          'education_qualification',
+          'passout_year',
+        ].map((key) => (
           <div key={key} className="flex flex-col">
             <label className="text-sm font-medium mb-1">
-              {key.replace(/_/g, " ").toUpperCase()}
+              {key.replace(/_/g, ' ').toUpperCase()}
             </label>
             <input
               type="text"
@@ -665,7 +676,7 @@ const InquiryForm: React.FC = () => {
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
             <option value="">Select ITP Center</option>
-            {areas.map(area => (
+            {areas.map((area) => (
               <option key={area.area_id} value={area.area_id}>
                 {area.area_name}
               </option>
@@ -684,7 +695,7 @@ const InquiryForm: React.FC = () => {
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
             <option value="">Select Course</option>
-            {categories.map(cat => (
+            {categories.map((cat) => (
               <option key={cat.cat_id} value={cat.cat_id}>
                 {cat.cat_name}
               </option>
@@ -703,7 +714,7 @@ const InquiryForm: React.FC = () => {
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
             <option value="">Select Reference</option>
-            {references.map(ref => (
+            {references.map((ref) => (
               <option key={ref.reference_id} value={ref.reference_id}>
                 {ref.reference_name}
               </option>
@@ -723,12 +734,51 @@ const InquiryForm: React.FC = () => {
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
             <option value="">Select Source</option>
-            {filteredSources.map(src => (
+            {filteredSources.map((src) => (
               <option key={src.source_id} value={src.source_id}>
                 {src.source_name}
               </option>
             ))}
           </select>
+        </div>
+
+        {/* OPTION */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Option (Optional)</label>
+          <input
+            type="text"
+            name="option"
+            value={formData.option}
+            onChange={handleChange}
+            placeholder="e.g. Interested / Call Later"
+            className="border border-gray-300 rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* REMARK */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Remark (Optional)</label>
+          <input
+            type="text"
+            name="remark"
+            value={formData.remark}
+            onChange={handleChange}
+            placeholder="Enter remark"
+            className="border border-gray-300 rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* OTHER */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Other (Optional)</label>
+          <input
+            type="text"
+            name="other"
+            value={formData.other}
+            onChange={handleChange}
+            placeholder="Any other info"
+            className="border border-gray-300 rounded-lg px-3 py-2"
+          />
         </div>
 
         <button
@@ -738,7 +788,7 @@ const InquiryForm: React.FC = () => {
             loading ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {loading ? "Submitting..." : "Register Now"}
+          {loading ? 'Submitting...' : 'Register Now'}
         </button>
       </form>
     </div>

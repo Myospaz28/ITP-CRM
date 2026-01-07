@@ -30,5 +30,4 @@ router.get("/getallloserawdata", getAllLoseRawData);
 
 router.get("/getallinvalidrawdata", getAllInvalidRawData);
 
-
 export default router;

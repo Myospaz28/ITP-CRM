@@ -1,8 +1,26 @@
 import express from 'express';
-import { fetchTaleCallerData, updateTaleCallerData, getTeleCallerStatus, getCategories, 
-    getProductsByCategory, getRawDataStatus, 
-    getAllCombinedRawData,
-    getAllActiveAssignedRawData} from '../controllers/teleCallerController.js';
+import {
+  fetchTaleCallerData,
+  updateTaleCallerData,
+  getTeleCallerStatus,
+  getCategories,
+  getProductsByCategory,
+  getRawDataStatus,
+  getAllCombinedRawData,
+  getAllActiveAssignedRawData,
+  fetchUnassignedTeleCallers,
+  assignTeleCallersToLead,
+  getTeleCallerCountByLead,
+  removeTeleCallerFromLead,
+  getTeamLeadWithTeleCallers,
+  getAllMetaData,
+  assignLeads,
+  transferLeads,
+  getMyTeleCallers,
+  getFollowUpLeads,
+  getLeadById,
+  getAllRawData,
+} from '../controllers/teleCallerController.js';
 
 const router = express.Router();
 
@@ -18,8 +36,32 @@ router.get('/products/:cat_id', getProductsByCategory);
 
 router.get('/rawdatastatus', getRawDataStatus);
 
-router.get("/combined-rawdata", getAllCombinedRawData);
+router.get('/combined-rawdata', getAllCombinedRawData);
 
-router.get("/rawdata/active", getAllActiveAssignedRawData);
+router.get('/rawdata/active', getAllActiveAssignedRawData);
+
+router.get('/fetchUnassignedTeleCallers', fetchUnassignedTeleCallers);
+
+router.post('/assignTeleCallersToLead', assignTeleCallersToLead);
+
+router.get('/getTeleCallerCountByLead/:lead_id', getTeleCallerCountByLead);
+
+router.delete('/removeTeleCaller/:tele_caller_id', removeTeleCallerFromLead);
+
+router.get('/team-leads/:lead_id/telecallers', getTeamLeadWithTeleCallers);
+
+router.get('/meta-data', getAllMetaData);
+
+router.post('/assign-leads', assignLeads);
+
+router.post('/transfer-leads', transferLeads);
+
+router.get('/team-lead/telecallers', getMyTeleCallers);
+
+router.get('/followup-leads', getFollowUpLeads);
+
+router.get('/lead/:id', getLeadById);
+
+router.get('/rawdata/all', getAllRawData);
 
 export default router;

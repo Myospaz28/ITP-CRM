@@ -1,21 +1,18 @@
-
 // server/controllers/userController.js
 
 import {
   addUser,
   getUsers as getAllUsers,
   deleteUser,
-  editUser
+  editUser,
 } from '../models/userModel.js';
 import db from '../database/db.js';
 import bcrypt from 'bcrypt';
 
-
-
-
 //bcrypted create user
 export const createUser = async (req, res) => {
-  const { name, contact, email, address, role, status, username, password } = req.body;
+  const { name, contact, email, address, role, status, username, password } =
+    req.body;
 
   try {
     // Hash the password before saving it
@@ -33,47 +30,95 @@ export const createUser = async (req, res) => {
       hashedPassword, // Store the hashed password
     ]);
 
-    res.status(201).json({ message: 'User added successfully!', user_id: result.insertId });
+    res
+      .status(201)
+      .json({ message: 'User added successfully!', user_id: result.insertId });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while adding the user.' });
   }
 };
 
-
-
-
 export const getUsers = async (req, res) => {
   try {
     const users = await getAllUsers();
-    // console.log('Users fetched from DB:', users); 
+    // console.log('Users fetched from DB:', users);
     res.status(200).json(users);
   } catch (error) {
-    console.error('Error fetching users:', error); 
+    console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 };
 
-
-
-
 //update user
-export const updateUser  = async (req, res) => {
-  const { user_id } = req.params; // Ensure this matches the route parameter
+// export const updateUser  = async (req, res) => {
+//   const { user_id } = req.params; // Ensure this matches the route parameter
 
-  console.log("user_id :", user_id)
-  const { name, contact, address, email, role, status } = req.body;
-  console.log("Updating user with data:", { user_id, name, contact, address, email, role, status });
+//   console.log("user_id :", user_id)
+//   const { name, contact, address, email, role, status } = req.body;
+//   console.log("Updating user with data:", { user_id, name, contact, address, email, role, status });
+//   try {
+//     const result = await editUser (user_id, { name, contact, address, email, role, status });
+//     res.json({ message: 'User  updated successfully', result });
+//   } catch (error) {
+//     console.error('Error updating user:', error);
+//     res.status(500).json({ error: 'Failed to update user' });
+//   }
+// };
+
+export const updateUser = async (req, res) => {
+  const { user_id } = req.params;
+
+  console.log('user_id :', user_id);
+
+  const {
+    name,
+    contact,
+    address,
+    email,
+    role,
+    status,
+    password, // 👈 sirf ye add kiya
+  } = req.body;
+
+  console.log('Updating user with data:', {
+    user_id,
+    name,
+    contact,
+    address,
+    email,
+    role,
+    status,
+    password: password ? '***' : 'not provided',
+  });
+
   try {
-    const result = await editUser (user_id, { name, contact, address, email, role, status });
-    res.json({ message: 'User  updated successfully', result });
+    // 🔐 agar password aaya to hash karo
+    let updatedData = {
+      name,
+      contact,
+      address,
+      email,
+      role,
+      status,
+    };
+
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updatedData.password = hashedPassword;
+    }
+
+    const result = await editUser(user_id, updatedData);
+
+    res.json({
+      message: 'User updated successfully',
+      result,
+    });
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 };
-
-
 
 //delete user
 export const removeUser = async (req, res) => {
@@ -96,10 +141,6 @@ export const removeUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete user' });
   }
 };
-
-
-
-
 
 // ========= non bcrypted create user =================
 

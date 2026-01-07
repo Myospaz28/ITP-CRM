@@ -1,6 +1,6 @@
 //database/db.js
 
-import mysql from 'mysql2/promise'; 
+import mysql from 'mysql2/promise';
 
 // Create a connection pool
 
@@ -17,9 +17,8 @@ const db = mysql.createPool({
   user: 'root',
   password: '',
   database: 'dzmbjxtk_itp_crm_lead',
-  // port: 3308,
+  // port: 3307,
 });
-
 
 // Connect to the database
 const connectToDatabase = async () => {
@@ -33,19 +32,7 @@ const connectToDatabase = async () => {
 
 connectToDatabase();
 
-export default db; 
-
-
-
-
-
-
-
-
-
-
-
-
+export default db;
 
 // const mysql = require('mysql2');
 // const dotenv = require('dotenv');
@@ -73,18 +60,3 @@ export default db;
 
 // // This allows you to keep using: connection.query(...)
 // export default db;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

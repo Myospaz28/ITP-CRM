@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
+import { toast } from 'react-toastify';
 
 const UpdateActiveLeads = ({
   open,
@@ -39,9 +40,11 @@ const UpdateActiveLeads = ({
     assign_date: '',
     target_date: '',
     products: '',
-    call_duration: '', // <-- add
-    call_remark: '', // <-- add
-    remark: '', // <-- for log
+    call_duration: '',
+    call_remark: '',
+    remark: '',
+    follow_up_date: '',
+    follow_up_time: '',
   });
 
   const [callStatus, setCallStatus] = useState('');
@@ -81,11 +84,11 @@ const UpdateActiveLeads = ({
       console.error('Error fetching sources', err);
     }
   };
- useEffect(() => {
-  if (formData.reference_id) {
-    fetchSourcesByReference(formData.reference_id);
-  }
-}, [formData.reference_id]);
+  useEffect(() => {
+    if (formData.reference_id) {
+      fetchSourcesByReference(formData.reference_id);
+    }
+  }, [formData.reference_id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -110,7 +113,8 @@ const UpdateActiveLeads = ({
         number: leadData.number || '',
         email: leadData.email || '',
         address: leadData.address || '',
-        area_id: leadData.area_id || '',
+        // area_id: leadData.area_id || '',
+        area_id: leadData.area_id ? String(leadData.area_id) : '',
         qualification: leadData.qualification || '',
         passout_year: leadData.passout_year || '',
         cat_id: leadData.cat_id || '',
@@ -118,7 +122,8 @@ const UpdateActiveLeads = ({
         source_id: leadData.source_id || '',
         status: leadData.status || '',
         lead_status: leadData.lead_status || '',
-        assign_id: leadData.assign_id || '',
+        // assign_id: leadData.assign_id || '',
+        assign_id: leadData.assigned_to_user_id || '',
         created_by_user: leadData.created_by_user || '',
         stage_id: leadData.stage_id || '',
         lead_sub_stage_id: leadData.lead_sub_stage_id || '',
@@ -130,16 +135,24 @@ const UpdateActiveLeads = ({
           ? formatDateForInput(leadData.target_date)
           : '',
         products: leadData.products || '',
-        call_duration: leadData.call_duration || '', // <-- add
-        call_remark: leadData.call_remark || '', // <-- add
-        remark: '', // <-- optional log remark
+        call_duration: leadData.call_duration || '',
+        call_remark: leadData.call_remark || '',
+        remark: '',
+        follow_up_date: leadData.follow_up_date
+          ? formatDateForInput(leadData.follow_up_date)
+          : '',
+        follow_up_time: leadData.follow_up_time || '',
       });
 
-      setCallStatus(leadData.stage_id || '');
-      setSubStatus(leadData.lead_sub_stage_id || '');
+      setCallStatus(
+        leadData.lead_stage_id ? String(leadData.lead_stage_id) : '',
+      );
+      setSubStatus(
+        leadData.lead_sub_stage_id ? String(leadData.lead_sub_stage_id) : '',
+      );
 
-      if (leadData.stage_id) {
-        fetchSubStages(leadData.stage_id);
+      if (leadData.lead_stage_id) {
+        fetchSubStages(String(leadData.lead_stage_id));
       }
     }
   }, [open, leadData]);
@@ -149,7 +162,7 @@ const UpdateActiveLeads = ({
 
     const updateData = {
       ...formData,
-      lead_status: selectedType, // <-- VERY IMPORTANT
+      lead_status: selectedType,
       lead_stage_id: callStatus,
       lead_sub_stage_id: subStatus,
       call_duration: formData.call_duration,
@@ -157,21 +170,22 @@ const UpdateActiveLeads = ({
       remark: formData.remark || '',
     };
 
-    console.log('Updated data:', updateData);
-
     try {
-      const response = await axios.put(
+      await axios.put(
         `${BASE_URL}api/update-lead/${leadData.master_id}`,
         updateData,
         { withCredentials: true },
       );
 
-      console.log('Update successful:', response.data);
+      // ✅ SUCCESS MESSAGE
+      toast.success('Lead updated successfully');
+
       onClose();
-      setRefeshTrigger((prev) => prev + 1); // Trigger refresh in parent
+      setRefeshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error updating lead:', error);
-      alert('Failed to update lead. Please try again.');
+
+      toast.error('Failed to update lead. Please try again.');
     }
   };
 
@@ -191,21 +205,6 @@ const UpdateActiveLeads = ({
             ✕
           </button>
         </div>
-
-        {/* <div className="flex items-center gap-6 mb-6">
-          {['invalid', 'lose', 'win'].map((type) => (
-            <label key={type} className="flex items-center gap-2">
-              <input
-                type="radio"
-                value={type}
-                checked={selectedType === type}
-                onChange={() => setSelectedType(type)}
-                className="mr-1"
-              />
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </label>
-          ))}
-        </div> */}
 
         <div className="flex items-center gap-6 mb-6">
           {['invalid', 'lose', 'win'].map((type) => (
@@ -411,7 +410,7 @@ const UpdateActiveLeads = ({
                   </div>
                   <div>
                     <label className="block mb-1 text-sm dark:text-white">
-                     Center
+                      Center
                     </label>
                     <select
                       name="area_id"
@@ -502,6 +501,34 @@ const UpdateActiveLeads = ({
               </div>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-1 text-sm dark:text-white">
+                Follow Up Date
+              </label>
+              <input
+                type="date"
+                name="follow_up_date"
+                value={formData.follow_up_date}
+                onChange={handleInputChange}
+                className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm dark:text-white">
+                Follow Up Time
+              </label>
+              <input
+                type="time"
+                name="follow_up_time"
+                value={formData.follow_up_time}
+                onChange={handleInputChange}
+                className="w-full p-2.5 border rounded text-sm dark:border-form-strokedark dark:bg-form-input dark:text-white"
+              />
+            </div>
+          </div>
+
           <div>
             <label className=" mb-1 text-sm dark:text-white">Call Remark</label>
             <textarea
@@ -516,17 +543,17 @@ const UpdateActiveLeads = ({
           {/* Submit Buttons */}
           <div className="flex justify-center space-x-4 pt-6 border-t dark:border-strokedark">
             <button
-              type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2.5 rounded text-sm font-medium transition duration-200"
-            >
-              Update Lead
-            </button>
-            <button
               type="button"
               onClick={onClose}
               className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white px-6 py-2.5 rounded text-sm font-medium transition duration-200"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2.5 rounded text-sm font-medium transition duration-200"
+            >
+              Update Lead
             </button>
           </div>
         </form>

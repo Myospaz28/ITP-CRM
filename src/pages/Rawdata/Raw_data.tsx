@@ -1348,7 +1348,8 @@ const RawData = () => {
   const [filteredSources, setFilteredSources] = useState<Source[]>([]);
   const [leadStages, setLeadStages] = useState([]);
   const [subStages, setSubStages] = useState([]);
-
+  const [isImporting, setIsImporting] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [singleFormData, setSingleFormData] = useState({
     name: '',
@@ -1367,16 +1368,15 @@ const RawData = () => {
   ) => {
     const { name, value } = e.target;
 
-    console.log('📌 handleChangeSource Triggered:', name, value);
+    // console.log('📌 handleChangeSource Triggered:', name, value);
 
-    // Update state always
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
     if (name === 'reference') {
-      const referenceId = Number(value); // convert to number
+      const referenceId = Number(value); 
       console.log('➡ Filtering for referenceId:', referenceId);
 
       console.log('🔍 Sources available:', sources);
@@ -1385,7 +1385,7 @@ const RawData = () => {
         console.log(
           `Checking source: ${src.source_id} | reference_id: ${src.reference_id}`,
         );
-        return Number(src.reference_id) === referenceId; // important fix
+        return Number(src.reference_id) === referenceId; 
       });
 
       console.log('🎯 Filtered Sources:', filtered);
@@ -1551,21 +1551,19 @@ const RawData = () => {
       return;
     }
 
+    setIsImporting(true); 
+    setError('');
+
     const formData1 = new FormData();
     formData1.append('file', file);
     formData1.append('cat_id', formData.cat_id);
     formData1.append('reference', formData.reference);
-    // formData1.append('area_id', formData.area_id);
     formData1.append('source_id', formData.source_id);
 
-    // Assign fields bhi backend ko bhejne padege
     formData1.append('assignType', assignData.assignType);
     formData1.append('mode', assignData.mode);
     formData1.append('assignedTo', String(assignData.assignedTo));
-    // formData1.append('assignDate', assignData.assignDate);
-    // formData1.append('targetDate', assignData.targetDate);
     formData1.append('remark', assignData.remark);
-    // formData1.append('leadCount', assignData.leadCount);
     formData1.append('lead_stage', formData.lead_stage);
     formData1.append('lead_sub_stage', formData.lead_sub_stage);
 
@@ -1580,20 +1578,19 @@ const RawData = () => {
       );
 
       if (response.status === 200) {
-        alert(
+        setSuccessMessage(
           response.data.totalAssigned
             ? `Imported & Assigned (${response.data.totalAssigned}) leads successfully!`
             : 'Data imported successfully!',
         );
 
-        setError('');
-        setErrorDetails([]);
-        setFile(null);
+        setShowSuccessPopup(true); // ✅ show popup
 
+        // reset form
+        setFile(null);
         setFormData({
           cat_id: '',
           reference: '',
-          // area_id: '',
           source_id: '',
           lead_stage: '',
           lead_sub_stage: '',
@@ -1603,15 +1600,10 @@ const RawData = () => {
           assignType: '',
           mode: '',
           assignedTo: 0,
-          // assignDate: '',
-          // targetDate: '',
-          // leadCount: '',
           remark: '',
         });
 
-        setShowImportPopup(false);
         fetchRawData();
-        navigate('/call');
       }
     } catch (err: any) {
       const backendMessage =
@@ -1625,11 +1617,12 @@ const RawData = () => {
         setShowImportPopup(false);
         setDuplicateEntries(duplicates);
         setShowDuplicateModal(true);
-        setError('');
         return;
       }
 
       setError(backendMessage);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -1880,7 +1873,7 @@ const RawData = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(assignData), // cat_id / area_id removed from assignData
+        body: JSON.stringify(assignData), 
       });
 
       const result = await response.json();
@@ -1930,13 +1923,13 @@ const RawData = () => {
     }
   };
 
-  //Single delete function
+ 
   const handleSingleDelete = async (Id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
         await axios.delete(`${BASE_URL}api/master-data/${Id}`);
         alert('Entry deleted successfully.');
-        setSelectedClients([]); // clear selected checkboxes
+        setSelectedClients([]); 
         fetchClients();
       } catch (error) {
         console.error(error);
@@ -1969,7 +1962,7 @@ const RawData = () => {
       <Breadcrumb pageName="Master Data" />
 
       {/* Text search input */}
-      <div className="w-full sm:w-1/3">
+      {/* <div className="w-full sm:w-1/3">
         <label className="block text-sm font-medium mb-1">Search</label>
         <input
           type="text"
@@ -1978,7 +1971,7 @@ const RawData = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
+      </div> */}
       <div className="flex justify-end gap-4 my-4">
         {selectedClients.length > 0 && (
           <div className="">
@@ -2204,10 +2197,21 @@ const RawData = () => {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="bg-green-500 text-white px-4 py-2 rounded"
+                  disabled={isImporting}
+                  className={`px-4 py-2 rounded text-white flex items-center gap-2
+    ${
+      isImporting
+        ? 'bg-gray-400 cursor-not-allowed'
+        : 'bg-green-500 hover:bg-green-600'
+    }
+  `}
                 >
-                  Submit
+                  {isImporting && (
+                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  )}
+                  {isImporting ? 'Importing...' : 'Submit'}
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setShowImportPopup(false)}
@@ -2233,6 +2237,29 @@ const RawData = () => {
         references={references}
         area={area}
       />
+
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-md w-96 text-center">
+            <h3 className="text-xl font-semibold text-green-600 mb-3">
+              Success 
+            </h3>
+
+            <p className="text-gray-700 mb-5">{successMessage}</p>
+
+            <button
+              onClick={() => {
+                setShowSuccessPopup(false);
+                setShowImportPopup(false);
+                navigate('/call');
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Duplicate Entries Modal */}
       {showDuplicateModal && (
@@ -2333,186 +2360,6 @@ const RawData = () => {
           </div>
         </div>
       )}
-
-      <div className="max-w-full overflow-auto rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark px-0">
-        <table className="w-full table-auto">
-          <thead>
-            <tr className="bg-gray-2 text-left dark:bg-meta-4">
-              <th className="py-4 px-4">
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={filteredClients
-                    .slice(
-                      (currentPage - 1) * entriesPerPage,
-                      currentPage * entriesPerPage,
-                    )
-                    .every((client) => selectedClients.includes(client.id))}
-                />
-              </th>
-              {/* <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Master Id
-              </th> */}
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Name
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Phone
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Email
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Course
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Reference Name
-              </th>
-              {/* <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Address
-              </th> */}
-
-              {/* <th className="py-4 px-4 font-medium text-black dark:text-white">
-                City
-              </th>*/}
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Source
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Created by
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Created At
-              </th>
-              <th className="py-4 px-4 font-medium text-black dark:text-white">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredClients
-              .slice(
-                (currentPage - 1) * entriesPerPage,
-                currentPage * entriesPerPage,
-              )
-              .map((client, index) => (
-                <tr key={client.id} className="border-b">
-                  <td className="py-3 px-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedClients.includes(client.id)}
-                      onChange={() => handleSelect(client.id)}
-                    />
-                  </td>
-                  {/* <td className="py-3 px-4">{client.master_id}</td> */}
-                  <td className="py-3 px-4">{client.name}</td>
-                  <td className="py-3 px-4">{client.number}</td>{' '}
-                  <td className="py-3 px-4">{client.email}</td>
-                  <td className="py-3 px-4">{client.cat_name}</td>
-                  <td className="py-3 px-4">{client.reference_name}</td>
-                  <td className="py-3 px-4">{client.source_name}</td>
-                  <td className="py-3 px-4">{client.created_by_username}</td>
-                  <td className="py-3 px-4">{client.created_at}</td>
-                  {/* <td className="py-3 px-4">{client.area}</td> */}
-                  {/* Changed from contact to number */}
-                  {/* <td className="py-3 px-4">{client.address}</td> */}
-                  <td className="border-[#eee] py-5 px-4 dark:border-strokedark text-center flex justify-center gap-2">
-                    <button
-                      className="inline-flex items-center justify-center rounded-md py-1 px-3 text-white bg-meta-3 hover:bg-opacity-75"
-                      onClick={() => handleEditClick(client)}
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button
-                      className="inline-flex items-center justify-center rounded-md py-1 px-3 text-white bg-red-600 hover:bg-red-700"
-                      onClick={() => handleSingleDelete(client.id)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
-        {/* <div className="flex justify-end p-4">
-          {[...Array(totalPages)].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => paginate(index + 1)}
-              className={`mx-1 px-3 py-1 border rounded-md ${
-                currentPage === index + 1
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white'
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div> */}
-        {/* ==================== Updated Pagination ==================== */}
-        <div className="flex justify-between items-center p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Showing {(currentPage - 1) * entriesPerPage + 1} -
-            {Math.min(currentPage * entriesPerPage, filteredClients.length)} of{' '}
-            {filteredClients.length}
-          </p>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => currentPage > 1 && paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 border rounded-md ${
-                currentPage === 1
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'hover:bg-gray-100 dark:bg-boxdark dark:text-white'
-              }`}
-            >
-              Prev
-            </button>
-
-            {[...Array(totalPages)].map((_, index) => {
-              const page = index + 1;
-              if (
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 2 && page <= currentPage + 2)
-              ) {
-                return (
-                  <button
-                    key={page}
-                    onClick={() => paginate(page)}
-                    className={`px-3 py-1 border rounded-md ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'hover:bg-gray-100 dark:bg-boxdark dark:text-white'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              } else if (page === currentPage - 3 || page === currentPage + 3) {
-                return <span key={page}>...</span>;
-              } else return null;
-            })}
-
-            <button
-              onClick={() =>
-                currentPage < totalPages && paginate(currentPage + 1)
-              }
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 border rounded-md ${
-                currentPage === totalPages
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'hover:bg-gray-100 dark:bg-boxdark dark:text-white'
-              }`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-        {/* ======================================================================== */}
-      </div>
 
       {/* Add Single Data Popup - Now using the separate component */}
       <InsertDataModal

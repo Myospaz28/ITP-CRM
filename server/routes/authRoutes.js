@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 import express from 'express';
-import { signIn, checkSession ,logout, getUserRole , getUserName} from '../controllers/authController.js';
+import { signIn, checkSession ,logout, getUserRole , getUserName, sendForgetPasswordOtp, resetPasswordWithOtp} from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -15,7 +15,9 @@ router.get('/get-role', getUserRole);
 
 router.get('/get-name', getUserName);
 
+router.post('/forget-password/send-otp', sendForgetPasswordOtp);
 
+router.post('/forget-password/reset', resetPasswordWithOtp);
 
 
 

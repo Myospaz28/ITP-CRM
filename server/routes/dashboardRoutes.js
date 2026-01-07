@@ -1,53 +1,38 @@
-
-import express from "express";
-import { getTotalLeadCount, getAssignedLeadCount, getfollowups, getMeetingScheduled, getcategory, getProducts,getConvertedLeads, getTotalCampaignCount } from "../controllers/dashboardController.js";
+import express from 'express';
+import {
+  getTotalLeadCount,
+  getAssignedLeadCount,
+  getfollowups,
+  getMeetingScheduled,
+  getcategory,
+  getProducts,
+  getConvertedLeads,
+  getTotalCampaignCount,
+  getTotalUsersCount,
+  getLoseLeadCount,
+  getInvalidLeadCount,
+  getAssignedTeleCallerCountForTeamLead,
+  getNewLeadCount,
+} from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
-router.get("/dashboard/lead-count", getTotalLeadCount);
-router.get("/master-data/assigned-count", getAssignedLeadCount);
-router.get("/master-data/fllowups", getfollowups);
-router.get("/master-data/meeting-scheduled", getMeetingScheduled);
-router.get("/master-data/category", getcategory);
-router.get("/master-data/product", getProducts);
-router.get("/master-data/converted-leads", getConvertedLeads);
+router.get('/dashboard/lead-count', getTotalLeadCount);
+router.get('/master-data/assigned-count', getAssignedLeadCount);
+router.get('/master-data/fllowups', getfollowups);
+router.get('/master-data/meeting-scheduled', getMeetingScheduled);
+router.get('/master-data/category', getcategory);
+router.get('/master-data/loose-leads', getLoseLeadCount);
+router.get('/master-data/invalid-leads', getInvalidLeadCount);
+router.get('/master-data/product', getProducts);
+router.get('/master-data/converted-leads', getConvertedLeads);
 
-router.get("/master-data/campaign-count", getTotalCampaignCount);
+router.get('/master-data/campaign-count', getTotalCampaignCount);
 
+router.get('/users/count', getTotalUsersCount);
 
+router.get('/team-lead/count', getAssignedTeleCallerCountForTeamLead);
 
+router.get('/new-leads-count', getNewLeadCount);
 
 export default router;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import express from 'express';
-// import { getClients, getParts, getProducts, getCompletedParts,getPartsInProgress, getPartsOnHold, getPartsUnderReview, getPendingParts } from './../controllers/dashboardController.js';
-
-// const router = express.Router();
-
-// router.get('/total-clients', getClients);
-// router.get('/total-parts', getParts);
-// router.get('/total-products', getProducts);
-// router.get('/completed-parts', getCompletedParts);
-// router.get('/pending-parts', getPendingParts);
-// router.get('/parts-under-review', getPartsUnderReview);
-// router.get('/parts-in-progress', getPartsInProgress);
-// router.get('/parts-on-hold', getPartsOnHold);
-
-
-
-
-// export default router;

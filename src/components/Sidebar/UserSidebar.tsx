@@ -5,7 +5,15 @@ import SidebarLinkGroup from './SidebarLinkGroup';
 import Logo from '../../images/logo/MMS_logo.png';
 import axios from 'axios';
 import { BASE_URL } from '../../../public/config.js';
-import { Activity, Ban, PhoneOutgoing, Trophy, XCircle } from 'lucide-react';
+import {
+  Activity,
+  Ban,
+  FolderPlus,
+  PhoneOutgoing,
+  Trophy,
+  UserPlus,
+  XCircle,
+} from 'lucide-react';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -25,7 +33,6 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [sidebarExpanded, setSidebarExpanded] = useState(
     storedSidebarExpanded === null ? false : storedSidebarExpanded === 'true',
   );
-
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -204,8 +211,25 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </SidebarLinkGroup>
               {/* <!-- Dashboard --> */}
               {/* <!-- Menu Item Call --> */}
-              
-                   {/* <!-- Menu Item Assigned Call --> */}
+
+              <li>
+                <NavLink
+                  to="/add-newlead"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-teal-500/20 hover:border-l-4 hover:border-l-teal-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-teal-500/20 border-l-4 border-l-teal-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <UserPlus className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  <span>Add New Lead</span>
+                </NavLink>
+              </li>
+
+              {/* <!-- Menu Item Assigned Call --> */}
               <li>
                 <NavLink
                   to="/call"
@@ -225,8 +249,8 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </NavLink>
               </li>
               {/* <!-- Menu Item Assigned Call --> */}
-              
-             {/* <!-- Menu Item: active List --> */}
+
+              {/* <!-- Menu Item: active List --> */}
               <li>
                 <NavLink
                   to="/activeleads"
@@ -247,7 +271,7 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </li>
               {/* <!-- Menu Item: active List --> */}
               {/* <!-- Menu Item: win --> */}
-           
+
               <li>
                 <NavLink
                   to="/winleads"
@@ -261,7 +285,9 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   onClick={() => setOpenDropdown(null)}
                 >
                   <Trophy className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  <span className="transition-all duration-300">Win Leads</span>
+                  <span className="transition-all duration-300">
+                    Addmission Leads
+                  </span>
                 </NavLink>
               </li>
               {/* <!-- Menu Item: win --> */}
@@ -306,12 +332,26 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/followupleads"
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 rounded-lg py-3 px-4 font-medium duration-300 ease-in-out transition-all hover:bg-pink-500/10 hover:border-l-4 hover:border-l-indigo-400 hover:pl-3 ${
+                      isActive
+                        ? 'bg-indigo-500/20 border-l-4 border-l-indigo-400 text-white shadow-lg'
+                        : 'text-gray-300'
+                    }`
+                  }
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <FolderPlus className="w-5 h-5 transition-transform group-hover:scale-110 " />
+                  <span className="transition-all duration-300">
+                    Follow Up Leads
+                  </span>
+                </NavLink>
+              </li>
 
               {/* <!-- Menu Item: Invalid --> */}
-
-             
-
-           
             </ul>
           </div>
         </nav>

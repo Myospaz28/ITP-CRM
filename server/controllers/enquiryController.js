@@ -1,4 +1,4 @@
-import db from "../database/db.js";
+import db from '../database/db.js';
 
 // export const createInquiry = async (req, res) => {
 //   try {
@@ -9,13 +9,12 @@ import db from "../database/db.js";
 //       email,
 //       education_qualification,
 //       passout_year,
-//       itp_center,         
-//       reference_name,     
-//       course_interest,    
-//       source_name,        
+//       itp_center,
+//       reference_name,
+//       course_interest,
+//       source_name,
 //     } = req.body;
 
-    
 //     const created_by_user = 1;
 
 //     const sql = `
@@ -47,22 +46,22 @@ import db from "../database/db.js";
 //       full_name,
 //       mobile,
 //       email,
-//       city,                   
-//       itp_center,              
+//       city,
+//       itp_center,
 //       education_qualification,
 //       passout_year,
-//       null,                    
-//       null,                    
-//       null,                    
-//       course_interest,         
-//       reference_name,          
-//       source_name,             
-//       "Not Assigned",          
-//       "Inactive",              
-//       null,                    
+//       null,
+//       null,
+//       null,
+//       course_interest,
+//       reference_name,
+//       source_name,
+//       "Not Assigned",
+//       "Inactive",
+//       null,
 //       created_by_user,
-//       null,                    
-//       null                     
+//       null,
+//       null
 //     ];
 
 //     const [result] = await db.query(sql, params);
@@ -78,7 +77,6 @@ import db from "../database/db.js";
 //     return res.status(500).json({ success: false, message: "Database error", error });
 //   }
 // };
-
 
 // export const createInquiry = async (req, res) => {
 //   const connection = await db.getConnection();
@@ -137,7 +135,6 @@ import db from "../database/db.js";
 //     const [rawInsert] = await connection.query(rawSql, rawParams);
 //     const master_id = rawInsert.insertId;
 
-
 //     // ---------------------------------------
 //     // 2️⃣ GET TELECALLERS LIST
 //     // ---------------------------------------
@@ -150,14 +147,12 @@ import db from "../database/db.js";
 //       return res.status(400).json({ message: "No telecallers available!" });
 //     }
 
-
 //     // ---------------------------------------
 //     // 3️⃣ AUTO ASSIGN LIKE importRawData
 //     // ---------------------------------------
 //     let index = 0;
 //     const tc = telecallers[index];
 //     index = (index + 1) % telecallers.length;
-
 
 //     // ---------------------------------------
 //     // 4️⃣ UPDATE assign_id IN raw_data
@@ -166,7 +161,6 @@ import db from "../database/db.js";
 //       `UPDATE raw_data SET assign_id=?, status='Assigned' WHERE master_id=?`,
 //       [tc.user_id, master_id]
 //     );
-
 
 //     // ---------------------------------------
 //     // 5️⃣ INSERT INTO assignments (NOW INCLUDING area_id + assign_type)
@@ -187,7 +181,6 @@ import db from "../database/db.js";
 //       ]
 //     );
 
-
 //     await connection.commit();
 
 //     return res.status(200).json({
@@ -206,8 +199,158 @@ import db from "../database/db.js";
 //   }
 // };
 
+// export const createInquiry = async (req, res) => {
+//   const connection = await db.getConnection();
 
+//   try {
+//     const {
+//       full_name,
+//       city,
+//       mobile,
+//       email,
+//       education_qualification,
+//       passout_year,
+//       itp_center,
+//       reference_name,
+//       course_interest,
+//       source_name,
+//       remark,
+//     } = req.body;
 
+//     const created_by_user = 9;
+
+//     await connection.beginTransaction();
+
+//     // ---------------------------------------
+//     // 1️⃣ INSERT INTO raw_data
+//     // ---------------------------------------
+//     const rawSql = `
+//       INSERT INTO raw_data (
+//         name, number, email, address, area_id, qualification, passout_year,
+//         fb_lead_id, form_id, page_id, cat_id, reference_id, source_id,
+//         status, lead_status, assign_id, created_by_user, lead_stage_id, lead_sub_stage_id
+//       )
+//       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//     `;
+
+//     const rawParams = [
+//       full_name,
+//       mobile,
+//       email,
+//       city,
+//       itp_center,
+//       education_qualification,
+//       passout_year,
+//       null,
+//       null,
+//       null,
+//       course_interest,
+//       reference_name,
+//       source_name,
+//       'Not Assigned',
+//       'Inactive',
+//       null,
+//       created_by_user,
+//       null,
+//       null,
+//     ];
+
+//     const [rawInsert] = await connection.query(rawSql, rawParams);
+//     const master_id = rawInsert.insertId;
+
+//     // ---------------------------------------
+//     // 2️⃣ GET TELECALLERS
+//     // ---------------------------------------
+//     const [telecallers] = await connection.query(
+//       `SELECT user_id, name FROM users WHERE role='tele-caller'`,
+//     );
+//     if (!telecallers.length) {
+//       await connection.rollback();
+//       return res.status(400).json({ message: 'No telecallers!' });
+//     }
+
+//     // ---------------------------------------
+//     // 3️⃣ GET LAST ASSIGNED TELECALLER (ROUND ROBIN)
+//     // ---------------------------------------
+//     const [[settings]] = await connection.query(
+//       `SELECT last_assigned_tc FROM settings LIMIT 1`,
+//     );
+
+//     let index = settings.last_assigned_tc || 0;
+
+//     const tc = telecallers[index]; // pick telecaller
+
+//     // NEXT INDEX
+//     const nextIndex = (index + 1) % telecallers.length;
+
+//     // UPDATE SETTINGS
+//     await connection.query(`UPDATE settings SET last_assigned_tc = ?`, [
+//       nextIndex,
+//     ]);
+
+//     // ---------------------------------------
+//     // 4️⃣ UPDATE RAW_DATA assign_id
+//     // ---------------------------------------
+//     await connection.query(
+//       `UPDATE raw_data SET assign_id=?, status='Assigned' WHERE master_id=?`,
+//       [tc.user_id, master_id],
+//     );
+
+//     // ---------------------------------------
+//     // 5️⃣ INSERT INTO ASSIGNMENTS
+//     // ---------------------------------------
+//     await connection.query(
+//       `INSERT INTO assignments
+//         (created_by_user, assigned_to_user_id, assigned_to, cat_id, remark, created_at, lead_count, area_id, assign_type)
+//        VALUES (?, ?, ?, ?, ?, NOW(), 1, ?, ?)
+//       `,
+//       [
+//         created_by_user,
+//         tc.user_id,
+//         tc.name,
+//         course_interest,
+//         remark || '',
+//         itp_center,
+//         'auto',
+//       ],
+//     );
+
+//     await connection.commit();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `Inquiry assigned to ${tc.name}`,
+//       assigned_to: tc.name,
+//       master_id,
+//     });
+//   } catch (error) {
+//     await connection.rollback();
+//     console.error('DB Error:', error);
+//     return res
+//       .status(500)
+//       .json({ success: false, message: 'Database error', error });
+//   } finally {
+//     connection.release();
+//   }
+// };
+
+export const getInquiries = async (req, res) => {
+  try {
+    const sql = `SELECT * FROM inquiry ORDER BY id DESC`;
+    const [rows] = await db.query(sql);
+
+    return res.status(200).json({
+      success: true,
+      total: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    console.error('DB Error:', error);
+    return res
+      .status(500)
+      .json({ success: false, message: 'Database error', error });
+  }
+};
 
 export const createInquiry = async (req, res) => {
   const connection = await db.getConnection();
@@ -221,29 +364,31 @@ export const createInquiry = async (req, res) => {
       education_qualification,
       passout_year,
       itp_center,
-      reference_name,
+      reference_name, // user provided
       course_interest,
-      source_name,
-      remark
+      source_name, // user provided
+      option,
+      remark,
+      pageURL,
     } = req.body;
 
-    const created_by_user = 1;
+    const created_by_user = 9;
 
     await connection.beginTransaction();
 
-    // ---------------------------------------
-    // 1️⃣ INSERT INTO raw_data
-    // ---------------------------------------
-    const rawSql = `
-      INSERT INTO raw_data (
+    // -----------------------------
+    // 1️⃣ INSERT INTO meta_data
+    // -----------------------------
+    const metaSql = `
+      INSERT INTO meta_data (
         name, number, email, address, area_id, qualification, passout_year,
         fb_lead_id, form_id, page_id, cat_id, reference_id, source_id,
-        status, lead_status, assign_id, created_by_user, lead_stage_id, lead_sub_stage_id
+        status, lead_status, assign_id, created_by_user, created_at,inquiry_option, inquiry_remark, page_url, lead_stage_id, lead_sub_stage_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)
     `;
 
-    const rawParams = [
+    const metaParams = [
       full_name,
       mobile,
       email,
@@ -251,111 +396,40 @@ export const createInquiry = async (req, res) => {
       itp_center,
       education_qualification,
       passout_year,
-      null, null, null,
-      course_interest,
-      reference_name,
-      source_name,
-      "Not Assigned",
-      "Inactive",
-      null,
+      null, // fb_lead_id
+      null, // form_id
+      null, // page_id
+      course_interest, // cat_id
+      reference_name || 1, // reference_id from user or fallback
+      source_name || 2, // source_id from user or fallback
+      'Not Assigned', // status
+      'Inactive', // lead_status
+      null, // assign_id (no auto assign)
       created_by_user,
-      null,
-      null
+      option || null,
+      remark || null,
+      pageURL || null,
+      1, // lead_stage_id default 1
+      1, // lead_sub_stage_id default 1
     ];
 
-    const [rawInsert] = await connection.query(rawSql, rawParams);
-    const master_id = rawInsert.insertId;
-
-    // ---------------------------------------
-    // 2️⃣ GET TELECALLERS
-    // ---------------------------------------
-    const [telecallers] = await connection.query(
-      `SELECT user_id, name FROM users WHERE role='tele-caller'`
-    );
-    if (!telecallers.length) {
-      await connection.rollback();
-      return res.status(400).json({ message: "No telecallers!" });
-    }
-
-    // ---------------------------------------
-    // 3️⃣ GET LAST ASSIGNED TELECALLER (ROUND ROBIN)
-    // ---------------------------------------
-    const [[settings]] = await connection.query(
-      `SELECT last_assigned_tc FROM settings LIMIT 1`
-    );
-
-    let index = settings.last_assigned_tc || 0;
-
-    const tc = telecallers[index]; // pick telecaller
-
-    // NEXT INDEX
-    const nextIndex = (index + 1) % telecallers.length;
-
-    // UPDATE SETTINGS
-    await connection.query(
-      `UPDATE settings SET last_assigned_tc = ?`,
-      [nextIndex]
-    );
-
-    // ---------------------------------------
-    // 4️⃣ UPDATE RAW_DATA assign_id
-    // ---------------------------------------
-    await connection.query(
-      `UPDATE raw_data SET assign_id=?, status='Assigned' WHERE master_id=?`,
-      [tc.user_id, master_id]
-    );
-
-    // ---------------------------------------
-    // 5️⃣ INSERT INTO ASSIGNMENTS
-    // ---------------------------------------
-    await connection.query(
-      `INSERT INTO assignments
-        (created_by_user, assigned_to_user_id, assigned_to, cat_id, remark, created_at, lead_count, area_id, assign_type)
-       VALUES (?, ?, ?, ?, ?, NOW(), 1, ?, ?)
-      `,
-      [
-        created_by_user,
-        tc.user_id,
-        tc.name,
-        course_interest,
-        remark || "",
-        itp_center,
-        "auto"
-      ]
-    );
+    const [metaInsert] = await connection.query(metaSql, metaParams);
+    const meta_id = metaInsert.insertId;
 
     await connection.commit();
 
     return res.status(200).json({
       success: true,
-      message: `Inquiry assigned to ${tc.name}`,
-      assigned_to: tc.name,
-      master_id
+      message: `Inquiry inserted successfully`,
+      meta_id,
     });
-
   } catch (error) {
     await connection.rollback();
-    console.error("DB Error:", error);
-    return res.status(500).json({ success: false, message: "Database error", error });
+    console.error('DB Error:', error);
+    return res
+      .status(500)
+      .json({ success: false, message: 'Database error', error });
   } finally {
     connection.release();
-  }
-};
-
-
-export const getInquiries = async (req, res) => {
-  try {
-    const sql = `SELECT * FROM inquiry ORDER BY id DESC`;
-    const [rows] = await db.query(sql);
-
-    return res.status(200).json({
-      success: true,
-      total: rows.length,
-      data: rows
-    });
-
-  } catch (error) {
-    console.error("DB Error:", error);
-    return res.status(500).json({ success: false, message: "Database error", error });
   }
 };

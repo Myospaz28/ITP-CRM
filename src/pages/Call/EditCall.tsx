@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { BASE_URL } from '../../../public/config.js';
 
 interface TeleCallerData {
@@ -16,6 +17,8 @@ interface TeleCallerData {
   stage_name?: string;
   lead_sub_stage_id?: number;
   lead_sub_stage_name?: string;
+  followup_date?: string;
+  followup_time?: string;
 }
 
 interface Product {
@@ -41,7 +44,8 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
     call_duration: data.tc_call_duration || '',
     master_id: data.master_id || 0,
     cat_id: data.cat_id || 0,
-    next_followup_date: '',
+    followup_date: data.followup_date ? data.followup_date.split('T')[0] : '',
+    followup_time: data.followup_time || '',
   });
 
   const [productList, setProductList] = useState<Product[]>([]);
@@ -56,6 +60,8 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
   const [statusMap, setStatusMap] = useState<any>({});
 
   const rawUserId = localStorage.getItem('user_id');
+
+  const DISABLE_FOLLOWUP_STAGE_IDS = [7, 8, 9];
   const currentUserId =
     rawUserId && !isNaN(parseInt(rawUserId)) ? parseInt(rawUserId) : null;
 
@@ -228,29 +234,58 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
       tc_status: tcStatus,
       tc_remark: formData.call_remark,
       tc_call_duration: formData.call_duration,
-
       lead_stage_id: formData.call_status,
       lead_sub_stage_id: selectedRawStatus,
-
-      // ✅ ADD THIS ↓↓↓
       selected_products: selectedProducts,
+      follow_up_date: formData.followup_date
+        ? `${formData.followup_date} 00:00:00`
+        : null,
+      follow_up_time: formData.followup_time || null,
     };
-
-    console.log('Final Payload:', payload);
 
     try {
       await axios.put(`${BASE_URL}api/edittelecaller`, payload, {
         withCredentials: true,
       });
 
-      alert('Updated successfully');
+      // ✅ SUCCESS TOAST
+      toast.success('Updated successfully');
+
       onUpdate();
       onClose();
     } catch (err) {
       console.error('Error updating data:', err);
-      alert('Failed to update');
+
+      // ❌ ERROR TOAST
+      toast.error('Failed to update');
     }
   };
+
+  useEffect(() => {
+    const safeDate = data.followup_date
+      ? new Date(data.followup_date).toISOString().slice(0, 10)
+      : '';
+
+    setFormData((prev) => ({
+      ...prev,
+      name: data.name || '',
+      cat_id: data.cat_id || 0,
+      master_id: data.master_id || 0,
+      call_remark: data.tc_remark || '',
+      call_duration: data.tc_call_duration || '',
+
+      // ✅ FINAL DATE FIX (THIS LINE)
+      followup_date: safeDate,
+
+      followup_time: data.followup_time || '',
+    }));
+  }, [data]);
+
+  const isFollowUpDisabled = DISABLE_FOLLOWUP_STAGE_IDS.includes(
+    Number(formData.call_status),
+  );
+
+  const isFollowUpRequired = !isFollowUpDisabled;
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-5 w-full max-w-3xl max-h-[90vh] overflow-y-auto z-[999]">
@@ -367,7 +402,7 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
         </div>
 
         {/* Sub Status + Duration */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
           {/* Call Duration */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -378,6 +413,38 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
               name="call_duration"
               className="w-full p-2 border border-gray-300 rounded"
               value={formData.call_duration}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Follow-up Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Follow-up Date
+              {isFollowUpRequired && <span className="text-red-500"> *</span>}
+            </label>
+
+            <input
+              type="date"
+              name="followup_date"
+              className="w-full p-2 border border-gray-300 rounded"
+              value={formData.followup_date}
+              onChange={handleChange}
+              disabled={isFollowUpDisabled}
+              required={isFollowUpRequired}
+            />
+          </div>
+
+          {/* Follow-up Time */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Follow-up Time
+            </label>
+            <input
+              type="time"
+              name="followup_time"
+              className="w-full p-2 border border-gray-300 rounded"
+              value={formData.followup_time}
               onChange={handleChange}
             />
           </div>
