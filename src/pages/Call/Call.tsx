@@ -666,6 +666,7 @@ import EditTeleCallerForm from './EditCall.js';
 import UpdateRawData from '../Rawdata/UpdateRawData.js';
 import { XCircle, ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup.js';
+import { useRef } from 'react';
 
 interface Category {
   cat_id: number;
@@ -690,6 +691,18 @@ const CallList = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fromDate, setFromDate] = useState('');
+  const [selectedTelecallers, setSelectedTelecallers] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedLeadStages, setSelectedLeadStages] = useState<string[]>([]);
+
+  const [openTelecallerDropdown, setOpenTelecallerDropdown] = useState(false);
+  const [openSourceDropdown, setOpenSourceDropdown] = useState(false);
+  const [openStageDropdown, setOpenStageDropdown] = useState(false);
+
+  const telecallerRef = useRef<HTMLDivElement | null>(null);
+  const sourceRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+
   const [toDate, setToDate] = useState('');
   // APPLIED FILTERS
   const [appliedFilters, setAppliedFilters] = useState({
@@ -709,12 +722,31 @@ const CallList = () => {
   const [area, setArea] = useState<Area[]>([]);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTelecaller, setSelectedTelecaller] = useState('');
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedLeadStage, setSelectedLeadStage] = useState('');
+  // const [selectedTelecaller, setSelectedTelecaller] = useState('');
+  // const [selectedSource, setSelectedSource] = useState('');
+  // const [selectedLeadStage, setSelectedLeadStage] = useState('');
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
   const [showAssignPopup, setShowAssignPopup] = useState(false);
   const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (telecallerRef.current && !telecallerRef.current.contains(target)) {
+        setOpenTelecallerDropdown(false);
+      }
+      if (sourceRef.current && !sourceRef.current.contains(target)) {
+        setOpenSourceDropdown(false);
+      }
+      if (stageRef.current && !stageRef.current.contains(target)) {
+        setOpenStageDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     axios
@@ -900,17 +932,16 @@ const CallList = () => {
         // 🆔 ID SEARCH (optional)
         client.master_id?.toString().includes(textTerm);
 
-      const matchesTelecaller = selectedTelecaller
-        ? client.assigned_to === selectedTelecaller
-        : true;
+      const matchesTelecaller =
+        !selectedTelecallers.length ||
+        selectedTelecallers.includes(client.assigned_to);
 
-      const matchesSource = selectedSource
-        ? client.source_name === selectedSource
-        : true;
+      const matchesSource =
+        !selectedSources.length || selectedSources.includes(client.source_name);
 
-      const matchesLeadStage = selectedLeadStage
-        ? client.stage_name === selectedLeadStage
-        : true;
+      const matchesLeadStage =
+        !selectedLeadStages.length ||
+        selectedLeadStages.includes(client.stage_name);
 
       let matchesDate = true;
       if (fromDate && toDate && client.created_at) {
@@ -936,9 +967,9 @@ const CallList = () => {
 
   const handleClearAll = () => {
     setSearchTerm('');
-    setSelectedTelecaller('');
-    setSelectedSource('');
-    setSelectedLeadStage('');
+    setSelectedTelecallers([]);
+    setSelectedSources([]);
+    setSelectedLeadStages([]);
     setFromDate('');
     setToDate('');
 
@@ -983,76 +1014,192 @@ const CallList = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        {/* Search */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 items-end">
+        {/* SEARCH */}
         <div>
           <label className="block text-sm font-medium mb-1">Search</label>
           <input
             type="text"
-            className="w-full p-2 border border-gray-300 rounded"
             placeholder="Search by Student name, number..."
+            className="w-full p-2 border border-gray-300 rounded"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
 
-        {/* Telecaller */}
+        {/* TELECALLER */}
         {userRole !== 'tele-caller' && (
-          <div>
+          <div className="relative" ref={telecallerRef}>
             <label className="block text-sm font-medium mb-1">
               Filter by Telecaller
             </label>
-            <select
-              className="w-full p-2 border border-gray-300 rounded"
-              value={selectedTelecaller}
-              onChange={(e) => setSelectedTelecaller(e.target.value)}
+
+            {/* FAKE SELECT */}
+            <div
+              onClick={() => setOpenTelecallerDropdown((p) => !p)}
+              className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
             >
-              <option value="">All Telecallers</option>
-              {telecallers.map((name, idx) => (
-                <option key={idx} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+              <span className="text-sm">
+                {selectedTelecallers.length === 0
+                  ? 'All Telecallers'
+                  : `${selectedTelecallers.length} Selected`}
+              </span>
+              <span className="text-gray-500">▼</span>
+            </div>
+
+            {/* DROPDOWN */}
+            {openTelecallerDropdown && (
+              <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTelecallers.length === 0}
+                    onChange={() => {
+                      setSelectedTelecallers([]);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="font-semibold text-sm">All Telecallers</span>
+                </label>
+
+                {telecallers.map((t, idx) => (
+                  <label
+                    key={idx}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTelecallers.includes(t)}
+                      onChange={() => {
+                        setSelectedTelecallers((prev) =>
+                          prev.includes(t)
+                            ? prev.filter((x) => x !== t)
+                            : [...prev, t],
+                        );
+                        setCurrentPage(1);
+                      }}
+                    />
+                    <span className="text-sm">{t}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Source */}
-        <div>
+        {/* SOURCE */}
+        <div className="relative" ref={sourceRef}>
           <label className="block text-sm font-medium mb-1">
             Filter by Source
           </label>
-          <select
-            className="w-full p-2 border border-gray-300 rounded"
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
+
+          <div
+            onClick={() => setOpenSourceDropdown((p) => !p)}
+            className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
           >
-            <option value="">All Sources</option>
-            {sources.map((s, i) => (
-              <option key={i} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <span className="text-sm">
+              {selectedSources.length === 0
+                ? 'All Sources'
+                : `${selectedSources.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openSourceDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.length === 0}
+                  onChange={() => {
+                    setSelectedSources([]);
+                    setCurrentPage(1);
+                  }}
+                />
+                <span className="font-semibold text-sm">All Sources</span>
+              </label>
+
+              {sources.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSources.includes(s)}
+                    onChange={() => {
+                      setSelectedSources((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      );
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Lead Stage */}
-        <div>
+        {/* LEAD STAGE */}
+        <div className="relative" ref={stageRef}>
           <label className="block text-sm font-medium mb-1">
             Filter by Lead Stage
           </label>
-          <select
-            className="w-full p-2 border border-gray-300 rounded"
-            value={selectedLeadStage}
-            onChange={(e) => setSelectedLeadStage(e.target.value)}
+
+          <div
+            onClick={() => setOpenStageDropdown((p) => !p)}
+            className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
           >
-            <option value="">All Lead Stages</option>
-            {leadStages.map((s, i) => (
-              <option key={i} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <span className="text-sm">
+              {selectedLeadStages.length === 0
+                ? 'All Lead Stages'
+                : `${selectedLeadStages.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openStageDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedLeadStages.length === 0}
+                  onChange={() => {
+                    setSelectedLeadStages([]);
+                    setCurrentPage(1);
+                  }}
+                />
+                <span className="font-semibold text-sm">All Lead Stages</span>
+              </label>
+
+              {leadStages.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedLeadStages.includes(s)}
+                    onChange={() => {
+                      setSelectedLeadStages((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      );
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1083,20 +1230,6 @@ const CallList = () => {
 
         {/* BUTTONS */}
         <div className="flex flex-wrap gap-3 sm:ml-auto">
-          <button
-            onClick={handleApplyFilters}
-            className="h-[40px] px-4 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Apply Filters
-          </button>
-
-          <button
-            onClick={handleClearAll}
-            className="h-[40px] px-4 bg-gray-300 rounded hover:bg-gray-400"
-          >
-            Clear All
-          </button>
-
           {userRole !== 'tele-caller' && (
             <button
               onClick={() => setShowAssignPopup(true)}
@@ -1112,6 +1245,20 @@ const CallList = () => {
               Transfer Leads
             </button>
           )}
+
+          <button
+            onClick={handleApplyFilters}
+            className="h-[40px] px-4 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Apply Filters
+          </button>
+
+          <button
+            onClick={handleClearAll}
+            className="h-[40px] px-4 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Clear All
+          </button>
         </div>
       </div>
 

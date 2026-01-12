@@ -341,10 +341,11 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
           {/* Call Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Lead Stage
+              Select Lead Stage <span className="text-red-500"> *</span>
             </label>
             <select
               name="call_status"
+              required
               className="w-full p-2 border border-gray-300 rounded"
               value={formData.call_status}
               onChange={(e) => {
@@ -368,12 +369,13 @@ const EditTeleCallerForm: React.FC<EditTeleCallerFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Sub Stage
+              Select Sub Stage<span className="text-red-500"> *</span>
             </label>
 
             <select
               name="selected_raw_status"
               className="w-full p-2 border border-gray-300 rounded"
+              required
               value={selectedRawStatus}
               onChange={(e) => setSelectedRawStatus(e.target.value)}
               disabled={!formData.call_status}

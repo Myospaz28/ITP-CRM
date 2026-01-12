@@ -7,6 +7,7 @@ import LeadDetailsPage from './LeadDetailsPage';
 import UpdateActiveLeads from './UpdateActiveLeads';
 import { ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup';
+import { useRef } from 'react';
 
 /* ================= INTERFACES ================= */
 
@@ -55,9 +56,9 @@ const FollowUpLeads: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   /* 🔥 FILTER STATES */
-  const [selectedTelecaller, setSelectedTelecaller] = useState('');
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedLeadStage, setSelectedLeadStage] = useState('');
+  const [selectedTelecallers, setSelectedTelecallers] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedLeadStages, setSelectedLeadStages] = useState<string[]>([]);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<
@@ -67,16 +68,25 @@ const FollowUpLeads: React.FC = () => {
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
   const [showAssignPopup, setShowAssignPopup] = useState(false);
   const [userRole, setUserRole] = useState<string>('');
-  const [modifiedDate, setModifiedDate] = useState('');
+  const [modifiedFrom, setModifiedFrom] = useState('');
+  const [modifiedTo, setModifiedTo] = useState('');
+  const [openTelecallerDropdown, setOpenTelecallerDropdown] = useState(false);
+  const [openSourceDropdown, setOpenSourceDropdown] = useState(false);
+  const [openStageDropdown, setOpenStageDropdown] = useState(false);
+
+  const telecallerRef = useRef<HTMLDivElement | null>(null);
+  const sourceRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
-    selectedTelecaller: '',
-    selectedSource: '',
-    selectedLeadStage: '',
+    selectedTelecallers: [] as string[],
+    selectedSources: [] as string[],
+    selectedLeadStages: [] as string[],
     fromDate: '',
     toDate: '',
-    modifiedDate: '',
+    modifiedFrom: '',
+    modifiedTo: '',
   });
 
   /* 🔁 REFRESH */
@@ -98,6 +108,25 @@ const FollowUpLeads: React.FC = () => {
   const [subStageList, setSubStageList] = useState<any[]>([]);
 
   /* ================= FETCH FOLLOWUPS ================= */
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+
+      if (telecallerRef.current && !telecallerRef.current.contains(t))
+        setOpenTelecallerDropdown(false);
+
+      if (sourceRef.current && !sourceRef.current.contains(t))
+        setOpenSourceDropdown(false);
+
+      if (stageRef.current && !stageRef.current.contains(t))
+        setOpenStageDropdown(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     axios
       .get(`${BASE_URL}auth/get-role`, { withCredentials: true })
@@ -150,31 +179,71 @@ const FollowUpLeads: React.FC = () => {
   ) as string[];
 
   /* ================= FILTER LOGIC ================= */
-
   const filteredData = leads.filter((lead) => {
     const term = appliedFilters.searchTerm.toLowerCase();
-    const followDate = lead.follow_up_date?.split('T')[0] || null;
-    const modified = lead.last_modified_date
-      ? lead.last_modified_date.split('T')[0] // ✅ IMPORTANT
+
+    const followDate = lead.follow_up_date
+      ? lead.follow_up_date.split('T')[0]
       : null;
 
+    const modified = lead.last_modified_date
+      ? lead.last_modified_date.split('T')[0]
+      : null;
+
+    /* 🔍 SEARCH */
+    const matchesSearch =
+      lead.name?.toLowerCase().includes(term) ||
+      lead.number?.includes(term) ||
+      lead.assigned_to?.toLowerCase().includes(term) ||
+      lead.source_name?.toLowerCase().includes(term) ||
+      lead.stage_name?.toLowerCase().includes(term);
+
+    /* 👤 TELECALLER (MULTI) */
+    const matchesTelecaller =
+      appliedFilters.selectedTelecallers.length === 0 ||
+      appliedFilters.selectedTelecallers.includes(lead.assigned_to ?? '');
+
+    /* 🔗 SOURCE (MULTI) */
+    const matchesSource =
+      appliedFilters.selectedSources.length === 0 ||
+      appliedFilters.selectedSources.includes(lead.source_name ?? '');
+
+    /* 🏷️ STAGE (MULTI) */
+    const matchesStage =
+      appliedFilters.selectedLeadStages.length === 0 ||
+      appliedFilters.selectedLeadStages.includes(lead.stage_name ?? '');
+
+    /* 📅 FOLLOW UP DATE */
+    const matchesFromDate =
+      !appliedFilters.fromDate ||
+      (followDate && followDate >= appliedFilters.fromDate);
+
+    const matchesToDate =
+      !appliedFilters.toDate ||
+      (followDate && followDate <= appliedFilters.toDate);
+
+    /* 🕒 LAST MODIFIED DATE */
+    const matchesModifiedFrom =
+      !appliedFilters.modifiedFrom ||
+      (modified && modified >= appliedFilters.modifiedFrom);
+
+    const matchesModifiedTo =
+      !appliedFilters.modifiedTo ||
+      (modified && modified <= appliedFilters.modifiedTo);
+    /* ⏰ STATUS */
+    const matchesStatus =
+      !selectedStatus || lead.follow_up_status === selectedStatus;
+
     return (
-      (lead.name?.toLowerCase().includes(term) ||
-        lead.number?.includes(term) ||
-        lead.assigned_to?.toLowerCase().includes(term)) &&
-      (!appliedFilters.selectedTelecaller ||
-        lead.assigned_to === appliedFilters.selectedTelecaller) &&
-      (!appliedFilters.selectedSource ||
-        lead.source_name === appliedFilters.selectedSource) &&
-      (!appliedFilters.selectedLeadStage ||
-        lead.stage_name === appliedFilters.selectedLeadStage) &&
-      (!appliedFilters.fromDate ||
-        (followDate && followDate >= appliedFilters.fromDate)) &&
-      (!appliedFilters.toDate ||
-        (followDate && followDate <= appliedFilters.toDate)) &&
-      (!appliedFilters.modifiedDate ||
-        modified === appliedFilters.modifiedDate) &&
-      (!selectedStatus || lead.follow_up_status === selectedStatus)
+      matchesSearch &&
+      matchesTelecaller &&
+      matchesSource &&
+      matchesStage &&
+      matchesFromDate &&
+      matchesToDate &&
+      matchesModifiedFrom &&
+      matchesModifiedTo &&
+      matchesStatus
     );
   });
 
@@ -194,32 +263,35 @@ const FollowUpLeads: React.FC = () => {
   const handleApplyFilters = () => {
     setAppliedFilters({
       searchTerm,
-      selectedTelecaller,
-      selectedSource,
-      selectedLeadStage,
+      selectedTelecallers,
+      selectedSources,
+      selectedLeadStages,
       fromDate,
       toDate,
-      modifiedDate,
+      modifiedFrom,
+      modifiedTo,
     });
     setCurrentPage(1);
   };
 
   const handleClearAll = () => {
     setSearchTerm('');
-    setSelectedTelecaller('');
-    setSelectedSource('');
-    setSelectedLeadStage('');
+    setSelectedTelecallers([]);
+    setSelectedSources([]);
+    setSelectedLeadStages([]);
     setFromDate('');
     setToDate('');
-    setModifiedDate('');
+    setModifiedFrom('');
+    setModifiedTo('');
     setAppliedFilters({
       searchTerm: '',
-      selectedTelecaller: '',
-      selectedSource: '',
-      selectedLeadStage: '',
+      selectedTelecallers: [],
+      selectedSources: [],
+      selectedLeadStages: [],
       fromDate: '',
       toDate: '',
-      modifiedDate: '',
+      modifiedFrom: '',
+      modifiedTo: '',
     });
     setCurrentPage(1);
   };
@@ -284,54 +356,6 @@ const FollowUpLeads: React.FC = () => {
       </div>
 
       {/* FILTERS */}
-      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <input
-          className="p-2 border rounded"
-          placeholder="Search by Student name, number..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="p-2 border rounded"
-          value={selectedTelecaller}
-          onChange={(e) => setSelectedTelecaller(e.target.value)}
-        >
-          <option value="">All Telecallers</option>
-          {telecallers.map((t, i) => (
-            <option key={i} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="p-2 border rounded"
-          value={selectedSource}
-          onChange={(e) => setSelectedSource(e.target.value)}
-        >
-          <option value="">All Sources</option>
-          {sourcesList.map((s, i) => (
-            <option key={i} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="p-2 border rounded"
-          value={selectedLeadStage}
-          onChange={(e) => setSelectedLeadStage(e.target.value)}
-        >
-          <option value="">All Lead Stages</option>
-          {leadStages.map((s, i) => (
-            <option key={i} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div> */}
-
       <div className="mb-6 flex flex-wrap lg:flex-nowrap gap-4 items-center">
         {/* 🔍 SEARCH */}
         <input
@@ -342,57 +366,189 @@ const FollowUpLeads: React.FC = () => {
         />
 
         {/* 👤 TELECALLER */}
-        <select
-          className="h-10 px-3 border rounded min-w-[170px]"
-          value={selectedTelecaller}
-          onChange={(e) => setSelectedTelecaller(e.target.value)}
-        >
-          <option value="">All Telecallers</option>
-          {telecallers.map((t, i) => (
-            <option key={i} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+        {userRole !== 'tele-caller' && (
+          <div className="relative min-w-[200px]" ref={telecallerRef}>
+            <div
+              onClick={() => setOpenTelecallerDropdown((p) => !p)}
+              className="h-10 px-3 border rounded bg-white cursor-pointer flex justify-between items-center"
+            >
+              <span className="text-sm">
+                {selectedTelecallers.length === 0
+                  ? 'All Telecallers'
+                  : `${selectedTelecallers.length} Selected`}
+              </span>
+              <span className="text-gray-500">▼</span>
+            </div>
+
+            {openTelecallerDropdown && (
+              <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTelecallers.length === 0}
+                    onChange={() => setSelectedTelecallers([])}
+                  />
+                  <span className="font-semibold text-sm">All Telecallers</span>
+                </label>
+
+                {telecallers.map((t, idx) => (
+                  <label
+                    key={idx}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTelecallers.includes(t)}
+                      onChange={() =>
+                        setSelectedTelecallers((prev) =>
+                          prev.includes(t)
+                            ? prev.filter((x) => x !== t)
+                            : [...prev, t],
+                        )
+                      }
+                    />
+                    <span className="text-sm">{t}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 🔗 SOURCE */}
-        <select
-          className="h-10 px-3 border rounded min-w-[150px]"
-          value={selectedSource}
-          onChange={(e) => setSelectedSource(e.target.value)}
-        >
-          <option value="">All Sources</option>
-          {sourcesList.map((s, i) => (
-            <option key={i} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="relative min-w-[180px]" ref={sourceRef}>
+          <div
+            onClick={() => setOpenSourceDropdown((p) => !p)}
+            className="h-10 px-3 border rounded bg-white cursor-pointer flex justify-between items-center"
+          >
+            <span className="text-sm">
+              {selectedSources.length === 0
+                ? 'All Sources'
+                : `${selectedSources.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openSourceDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.length === 0}
+                  onChange={() => setSelectedSources([])}
+                />
+                <span className="font-semibold text-sm">All Sources</span>
+              </label>
+
+              {sourcesList.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSources.includes(s)}
+                    onChange={() =>
+                      setSelectedSources((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      )
+                    }
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 🏷️ LEAD STAGE */}
-        <select
-          className="h-10 px-3 border rounded min-w-[160px]"
-          value={selectedLeadStage}
-          onChange={(e) => setSelectedLeadStage(e.target.value)}
-        >
-          <option value="">All Lead Stages</option>
-          {leadStages.map((s, i) => (
-            <option key={i} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="relative min-w-[190px]" ref={stageRef}>
+          <div
+            onClick={() => setOpenStageDropdown((p) => !p)}
+            className="h-10 px-3 border rounded bg-white cursor-pointer flex justify-between items-center"
+          >
+            <span className="text-sm">
+              {selectedLeadStages.length === 0
+                ? 'All Lead Stages'
+                : `${selectedLeadStages.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openStageDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedLeadStages.length === 0}
+                  onChange={() => setSelectedLeadStages([])}
+                />
+                <span className="font-semibold text-sm">All Lead Stages</span>
+              </label>
+
+              {leadStages.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedLeadStages.includes(s)}
+                    onChange={() =>
+                      setSelectedLeadStages((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      )
+                    }
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 📅 LAST MODIFIED */}
-        <div className="flex items-center gap-2 min-w-[220px]">
-          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            Last Modified:
-          </span>
+        {/* <div className="flex gap-2">
           <input
             type="date"
             className="h-10 px-3 border rounded"
-            value={modifiedDate}
-            onChange={(e) => setModifiedDate(e.target.value)}
+            value={modifiedFrom}
+            onChange={(e) => setModifiedFrom(e.target.value)}
+            placeholder="Modified From"
+          />
+          <input
+            type="date"
+            className="h-10 px-3 border rounded"
+            value={modifiedTo}
+            onChange={(e) => setModifiedTo(e.target.value)}
+            placeholder="Modified To"
+          />
+        </div> */}
+
+        <div className="relative flex gap-2 pt-5">
+          {/* Label */}
+          <span className="absolute top-0 left-1 text-xs font-semibold text-gray-600">
+            Last Modified
+          </span>
+
+          <input
+            type="date"
+            className="h-10 px-3 border rounded"
+            value={modifiedFrom}
+            onChange={(e) => setModifiedFrom(e.target.value)}
+          />
+
+          <span className="self-center text-gray-500 text-sm">to</span>
+
+          <input
+            type="date"
+            className="h-10 px-3 border rounded"
+            value={modifiedTo}
+            onChange={(e) => setModifiedTo(e.target.value)}
           />
         </div>
       </div>
@@ -474,7 +630,23 @@ const FollowUpLeads: React.FC = () => {
         </div>
 
         {/* APPLY / CLEAR */}
+
         <div className="ml-auto flex gap-3">
+          {userRole !== 'tele-caller' && (
+            <button
+              onClick={() => setShowAssignPopup(true)}
+              disabled={selectedLeadIds.length === 0}
+              className={`px-4 py-2 rounded flex items-center gap-2 transition
+          ${
+            selectedLeadIds.length === 0
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+            >
+              <ArrowRightLeft size={18} />
+              Transfer Leads
+            </button>
+          )}
           <button
             onClick={handleApplyFilters}
             className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -492,21 +664,6 @@ const FollowUpLeads: React.FC = () => {
             Clear
           </button>
         </div>
-        {userRole !== 'tele-caller' && (
-          <button
-            onClick={() => setShowAssignPopup(true)}
-            disabled={selectedLeadIds.length === 0}
-            className={`px-4 py-2 rounded flex items-center gap-2 transition
-          ${
-            selectedLeadIds.length === 0
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-          >
-            <ArrowRightLeft size={18} />
-            Transfer Leads
-          </button>
-        )}
       </div>
 
       {/* TABLE */}

@@ -2518,22 +2518,23 @@ export const getFollowUpLeads = async (req, res) => {
 
         -- 🔥 FOLLOW UP STATUS (IST SAFE)
         CASE
-          WHEN rd.follow_up_date IS NULL THEN NULL
+  WHEN rd.follow_up_date IS NULL THEN NULL
 
-          WHEN 
-            CONCAT(
-              DATE(CONVERT_TZ(rd.follow_up_date,'+00:00','+05:30')),
-              ' ',
-              IFNULL(rd.follow_up_time, '23:59:59')
-            ) < CONVERT_TZ(NOW(),'+00:00','+05:30')
-            THEN 'overdue'
+  WHEN
+    TIMESTAMP(
+      rd.follow_up_date,
+      IFNULL(rd.follow_up_time, '23:59:59')
+    ) < NOW()
+  THEN 'overdue'
 
-          WHEN DATE(CONVERT_TZ(rd.follow_up_date,'+00:00','+05:30')) =
-               DATE(CONVERT_TZ(NOW(),'+00:00','+05:30'))
-            THEN 'today'
+  WHEN
+    DATE(rd.follow_up_date) = CURDATE()
+  THEN 'today'
 
-          ELSE 'upcoming'
-        END AS follow_up_status
+  ELSE 'upcoming'
+END AS follow_up_status
+
+
 
       FROM raw_data rd
 

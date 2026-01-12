@@ -98,10 +98,21 @@ const UpdateActiveLeads = ({
     });
   };
 
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+  const formatDateForInput = (utcDate) => {
+    if (!utcDate) return '';
+
+    // Convert UTC → IST properly
+    const istDate = new Date(
+      new Date(utcDate).toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
+      }),
+    );
+
+    const year = istDate.getFullYear();
+    const month = String(istDate.getMonth() + 1).padStart(2, '0');
+    const day = String(istDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   };
 
   useEffect(() => {
@@ -190,6 +201,24 @@ const UpdateActiveLeads = ({
   };
 
   if (!open || !leadData) return null;
+
+  const formatDateTime = (date: string | null, time?: string | null) => {
+    if (!date) return 'NA';
+
+    // 🔥 Convert UTC → IST (+05:30)
+    const utcDate = new Date(date);
+    const istTime = new Date(utcDate.getTime() + 5.5 * 60 * 60 * 1000);
+
+    const year = istTime.getFullYear();
+    const month = String(istTime.getMonth() + 1).padStart(2, '0');
+    const day = String(istTime.getDate()).padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+
+    if (!time) return formattedDate;
+
+    return `${formattedDate} ${time}`;
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 overflow-y-auto">

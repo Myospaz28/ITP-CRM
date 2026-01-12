@@ -1070,6 +1070,7 @@ import UpdateActiveLeads from './UpdateActiveLeads.js';
 import LeadDetailsPage from './LeadDetailsPage.js';
 import { XCircle, ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup.js';
+import { useRef } from 'react';
 
 interface Category {
   cat_id: number;
@@ -1114,18 +1115,26 @@ const ActiveLeads = () => {
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
 
   // FILTERS
-  const [selectedUser, setSelectedUser] = useState('');
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedStage, setSelectedStage] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedStages, setSelectedStages] = useState<string[]>([]);
+
+  const [openUserDropdown, setOpenUserDropdown] = useState(false);
+  const [openSourceDropdown, setOpenSourceDropdown] = useState(false);
+  const [openStageDropdown, setOpenStageDropdown] = useState(false);
+
+  const userRef = useRef<HTMLDivElement | null>(null);
+  const sourceRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [modifiedDate, setModifiedDate] = useState('');
   // APPLIED FILTERS (NEW)
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
-    selectedUser: '',
-    selectedSource: '',
-    selectedStage: '',
+    selectedUser: selectedUsers,
+    selectedSource: selectedSources,
+    selectedStage: selectedStages,
     fromDate: '',
     toDate: '',
     modifiedDate: '',
@@ -1145,6 +1154,24 @@ const ActiveLeads = () => {
   const [showAssignPopup, setShowAssignPopup] = useState(false);
 
   const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+
+      if (userRef.current && !userRef.current.contains(t))
+        setOpenUserDropdown(false);
+
+      if (sourceRef.current && !sourceRef.current.contains(t))
+        setOpenSourceDropdown(false);
+
+      if (stageRef.current && !stageRef.current.contains(t))
+        setOpenStageDropdown(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     axios
@@ -1278,9 +1305,9 @@ const ActiveLeads = () => {
   const handleApplyFilters = () => {
     setAppliedFilters({
       searchTerm,
-      selectedUser,
-      selectedSource,
-      selectedStage,
+      selectedUser: selectedUsers,
+      selectedSource: selectedSources,
+      selectedStage: selectedStages,
       fromDate,
       toDate,
       modifiedDate,
@@ -1290,18 +1317,18 @@ const ActiveLeads = () => {
 
   const handleClearFilters = () => {
     setSearchTerm('');
-    setSelectedUser('');
-    setSelectedSource('');
-    setSelectedStage('');
+    setSelectedUsers([]);
+    setSelectedSources([]);
+    setSelectedStages([]);
     setFromDate('');
     setToDate('');
     setModifiedDate('');
 
     setAppliedFilters({
       searchTerm: '',
-      selectedUser: '',
-      selectedSource: '',
-      selectedStage: '',
+      selectedUser: [],
+      selectedSource: [],
+      selectedStage: [],
       fromDate: '',
       toDate: '',
       modifiedDate: '',
@@ -1328,12 +1355,12 @@ const ActiveLeads = () => {
         lead.assigned_to?.toLowerCase().includes(term) ||
         lead.source_name?.toLowerCase().includes(term) ||
         lead.stage_name?.toLowerCase().includes(term)) &&
-      (!appliedFilters.selectedUser ||
-        lead.assigned_to === appliedFilters.selectedUser) &&
-      (!appliedFilters.selectedSource ||
-        lead.source_name === appliedFilters.selectedSource) &&
-      (!appliedFilters.selectedStage ||
-        lead.stage_name === appliedFilters.selectedStage) &&
+      (!appliedFilters.selectedUser.length ||
+        appliedFilters.selectedUser.includes(lead.assigned_to)) &&
+      (!appliedFilters.selectedSource.length ||
+        appliedFilters.selectedSource.includes(lead.source_name)) &&
+      (!appliedFilters.selectedStage.length ||
+        appliedFilters.selectedStage.includes(lead.stage_name)) &&
       (!appliedFilters.fromDate ||
         (createdDate && createdDate >= appliedFilters.fromDate)) &&
       (!appliedFilters.toDate ||
@@ -1428,6 +1455,7 @@ const ActiveLeads = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 items-end">
+        {/* SEARCH */}
         <div>
           <label className="block text-sm font-medium mb-1">Search</label>
           <input
@@ -1442,84 +1470,174 @@ const ActiveLeads = () => {
           />
         </div>
 
+        {/* TELECALLER */}
         {userRole !== 'tele-caller' && (
-          <div>
+          <div className="relative" ref={userRef}>
             <label className="block text-sm font-medium mb-1">
               Filter by Telecaller
             </label>
-            <select
-              className="w-full p-2 border border-gray-300 rounded"
-              value={selectedUser}
-              onChange={(e) => {
-                setSelectedUser(e.target.value);
-                setCurrentPage(1);
-              }}
+
+            <div
+              onClick={() => setOpenUserDropdown((p) => !p)}
+              className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
             >
-              <option value="">All Telecallers</option>
-              {users.map((u, idx) => (
-                <option key={idx} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
+              <span className="text-sm">
+                {selectedUsers.length === 0
+                  ? 'All Telecallers'
+                  : `${selectedUsers.length} Selected`}
+              </span>
+              <span className="text-gray-500">▼</span>
+            </div>
+
+            {openUserDropdown && (
+              <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === 0}
+                    onChange={() => {
+                      setSelectedUsers([]);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="font-semibold text-sm">All Telecallers</span>
+                </label>
+
+                {users.map((u, idx) => (
+                  <label
+                    key={idx}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(u)}
+                      onChange={() => {
+                        setSelectedUsers((prev) =>
+                          prev.includes(u)
+                            ? prev.filter((x) => x !== u)
+                            : [...prev, u],
+                        );
+                        setCurrentPage(1);
+                      }}
+                    />
+                    <span className="text-sm">{u}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        <div>
+        {/* SOURCE */}
+        <div className="relative" ref={sourceRef}>
           <label className="block text-sm font-medium mb-1">
             Filter by Source
           </label>
-          <select
-            className="w-full p-2 border border-gray-300 rounded"
-            value={selectedSource}
-            onChange={(e) => {
-              setSelectedSource(e.target.value);
-              setCurrentPage(1);
-            }}
+
+          <div
+            onClick={() => setOpenSourceDropdown((p) => !p)}
+            className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
           >
-            <option value="">All Sources</option>
-            {sources.map((s, idx) => (
-              <option key={idx} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <span className="text-sm">
+              {selectedSources.length === 0
+                ? 'All Sources'
+                : `${selectedSources.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openSourceDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.length === 0}
+                  onChange={() => {
+                    setSelectedSources([]);
+                    setCurrentPage(1);
+                  }}
+                />
+                <span className="font-semibold text-sm">All Sources</span>
+              </label>
+
+              {sources.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSources.includes(s)}
+                    onChange={() => {
+                      setSelectedSources((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      );
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div>
+        {/* STAGE */}
+        <div className="relative" ref={stageRef}>
           <label className="block text-sm font-medium mb-1">
             Filter by Lead Stage
           </label>
-          <select
-            className="w-full p-2 border border-gray-300 rounded"
-            value={selectedStage}
-            onChange={(e) => {
-              setSelectedStage(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">All Lead Stages</option>
-            {stages.map((s, idx) => (
-              <option key={idx} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Last Modified Date
-          </label>
-          <input
-            type="date"
-            className="w-full p-2 border border-gray-300 rounded"
-            value={modifiedDate}
-            onChange={(e) => {
-              setModifiedDate(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
+          <div
+            onClick={() => setOpenStageDropdown((p) => !p)}
+            className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
+          >
+            <span className="text-sm">
+              {selectedStages.length === 0
+                ? 'All Lead Stages'
+                : `${selectedStages.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {openStageDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedStages.length === 0}
+                  onChange={() => {
+                    setSelectedStages([]);
+                    setCurrentPage(1);
+                  }}
+                />
+                <span className="font-semibold text-sm">All Lead Stages</span>
+              </label>
+
+              {stages.map((s, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedStages.includes(s)}
+                    onChange={() => {
+                      setSelectedStages((prev) =>
+                        prev.includes(s)
+                          ? prev.filter((x) => x !== s)
+                          : [...prev, s],
+                      );
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="text-sm">{s}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1550,20 +1668,6 @@ const ActiveLeads = () => {
 
         {/* BUTTONS */}
         <div className="flex gap-3 sm:ml-auto flex-wrap">
-          <button
-            onClick={handleApplyFilters}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Apply Filters
-          </button>
-
-          <button
-            onClick={handleClearFilters}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-          >
-            Clear All
-          </button>
-
           {userRole !== 'tele-caller' && (
             <button
               onClick={() => setShowAssignPopup(true)}
@@ -1579,6 +1683,19 @@ const ActiveLeads = () => {
               Transfer Leads
             </button>
           )}
+          <button
+            onClick={handleApplyFilters}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Apply Filters
+          </button>
+
+          <button
+            onClick={handleClearFilters}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Clear All
+          </button>
         </div>
       </div>
 
