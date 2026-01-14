@@ -78,6 +78,9 @@ const AllLeads: React.FC = () => {
 
   const [openSourceDropdown, setOpenSourceDropdown] = useState(false);
   const [openStageDropdown, setOpenStageDropdown] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const sourceDropdownRef = useRef<HTMLDivElement | null>(null);
   const stageDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -86,6 +89,7 @@ const AllLeads: React.FC = () => {
     selectedUsers: [] as string[],
     selectedSource: [] as string[],
     selectedStage: [] as string[],
+    selectedStatus: [] as string[],
     fromDate: '',
     toDate: '',
     modifiedFromDate: '',
@@ -114,6 +118,13 @@ const AllLeads: React.FC = () => {
         !stageDropdownRef.current.contains(target)
       ) {
         setOpenStageDropdown(false);
+      }
+
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenStatusDropdown(false);
       }
     };
 
@@ -223,6 +234,7 @@ const AllLeads: React.FC = () => {
       selectedUsers,
       selectedSource: selectedSources,
       selectedStage: selectedStages,
+      selectedStatus: selectedStatuses,
       fromDate,
       toDate,
       modifiedFromDate,
@@ -236,6 +248,7 @@ const AllLeads: React.FC = () => {
     setSelectedUsers([]);
     setSelectedSources([]);
     setSelectedStages([]);
+    setSelectedStatuses([]);
     setFromDate('');
     setToDate('');
     setModifiedDate('');
@@ -247,6 +260,7 @@ const AllLeads: React.FC = () => {
       selectedUsers: [],
       selectedSource: selectedSources,
       selectedStage: selectedStages,
+      selectedStatus: selectedStatuses,
       fromDate: '',
       toDate: '',
       modifiedFromDate: '',
@@ -348,21 +362,20 @@ const AllLeads: React.FC = () => {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
-  const formatDateTimeIST = (date: string | null) => {
-    if (!date) return 'NA';
+  const formatToIST = (utcDate) => {
+    if (!utcDate) return 'NA';
 
-    const utcDate = new Date(date);
-    const istDate = new Date(utcDate.getTime() + 5.5 * 60 * 60 * 1000);
-
-    const year = istDate.getFullYear();
-    const month = String(istDate.getMonth() + 1).padStart(2, '0');
-    const day = String(istDate.getDate()).padStart(2, '0');
-    const hours = String(istDate.getHours()).padStart(2, '0');
-    const minutes = String(istDate.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return new Date(utcDate).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
   };
-
   /* ================= UI ================= */
 
   return (
@@ -774,7 +787,7 @@ const AllLeads: React.FC = () => {
                     {formatDate(lead.created_at)}
                   </td>
                   <td className="border-b py-3 px-4 text-gray-700 text-sm">
-                    {formatDateTimeIST(lead.last_modified_date)}
+                    {formatToIST(lead.last_modified_date)}
                   </td>
 
                   <td className="border-b py-3 px-4 flex gap-2">

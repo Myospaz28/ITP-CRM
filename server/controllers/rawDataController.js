@@ -2160,179 +2160,179 @@ export const updateLeadWithStageLogs1 = async (req, res) => {
   }
 };
 
-export const updateLeadWithStageLogs = async (req, res) => {
-  const {
-    name,
-    number,
-    email,
-    address,
-    area_id,
-    qualification,
-    passout_year,
-    cat_id,
-    reference_id,
-    source_id,
-    lead_status,
-    lead_stage_id,
-    lead_sub_stage_id,
-    remark,
-    call_duration,
-    call_remark,
-    assign_id, // NEW assigned user_id
-    follow_up_date,
-    follow_up_time,
-  } = req.body;
+// export const updateLeadWithStageLogs = async (req, res) => {
+//   const {
+//     name,
+//     number,
+//     email,
+//     address,
+//     area_id,
+//     qualification,
+//     passout_year,
+//     cat_id,
+//     reference_id,
+//     source_id,
+//     lead_status,
+//     lead_stage_id,
+//     lead_sub_stage_id,
+//     remark,
+//     call_duration,
+//     call_remark,
+//     assign_id, // NEW assigned user_id
+//     follow_up_date,
+//     follow_up_time,
+//   } = req.body;
 
-  const { master_id } = req.params;
+//   const { master_id } = req.params;
 
-  try {
-    /* ------------------------------------------------
-       1️⃣ Fetch existing lead, stage & assignment
-    ------------------------------------------------ */
-    const [oldLead] = await db.query(
-      `SELECT 
-        rd.assign_id AS assignment_id,
-        rd.lead_stage_id,
-        rd.lead_sub_stage_id,
-        ls.stage_name AS previous_stage_name,
-        lss.lead_sub_stage_name AS previous_sub_stage_name,
-        asg.assigned_to_user_id AS currentAssignedUserId
-       FROM raw_data rd
-       LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
-       LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
-       LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
-       WHERE rd.master_id = ?`,
-      [master_id],
-    );
+//   try {
+//     /* ------------------------------------------------
+//        1️⃣ Fetch existing lead, stage & assignment
+//     ------------------------------------------------ */
+//     const [oldLead] = await db.query(
+//       `SELECT
+//         rd.assign_id AS assignment_id,
+//         rd.lead_stage_id,
+//         rd.lead_sub_stage_id,
+//         ls.stage_name AS previous_stage_name,
+//         lss.lead_sub_stage_name AS previous_sub_stage_name,
+//         asg.assigned_to_user_id AS currentAssignedUserId
+//        FROM raw_data rd
+//        LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+//        LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+//        LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+//        WHERE rd.master_id = ?`,
+//       [master_id],
+//     );
 
-    if (!oldLead.length) {
-      return res.status(404).json({ message: 'Lead not found' });
-    }
+//     if (!oldLead.length) {
+//       return res.status(404).json({ message: 'Lead not found' });
+//     }
 
-    const {
-      assignment_id,
-      lead_stage_id: previousStageId,
-      lead_sub_stage_id: previousSubStageId,
-      previous_stage_name,
-      previous_sub_stage_name,
-      currentAssignedUserId,
-    } = oldLead[0];
+//     const {
+//       assignment_id,
+//       lead_stage_id: previousStageId,
+//       lead_sub_stage_id: previousSubStageId,
+//       previous_stage_name,
+//       previous_sub_stage_name,
+//       currentAssignedUserId,
+//     } = oldLead[0];
 
-    /* ------------------------------------------------
-       2️⃣ Update raw_data
-    ------------------------------------------------ */
-    await db.query(
-      `UPDATE raw_data SET 
-        name = ?, number = ?, email = ?, address = ?, area_id = ?,
-        qualification = ?, passout_year = ?, cat_id = ?, reference_id = ?,
-        source_id = ?, lead_status = ?, lead_stage_id = ?, lead_sub_stage_id = ?,
-        call_remark = ?, call_duration = ?, follow_up_date = ?, follow_up_time = ?
-       WHERE master_id = ?`,
-      [
-        name,
-        number,
-        email,
-        address,
-        area_id,
-        qualification,
-        passout_year,
-        cat_id,
-        reference_id,
-        source_id,
-        lead_status,
-        lead_stage_id,
-        lead_sub_stage_id,
-        call_remark || remark || null,
-        call_duration || null,
-        follow_up_date || null,
-        follow_up_time || null,
-        master_id,
-      ],
-    );
+//     /* ------------------------------------------------
+//        2️⃣ Update raw_data
+//     ------------------------------------------------ */
+//     await db.query(
+//       `UPDATE raw_data SET
+//         name = ?, number = ?, email = ?, address = ?, area_id = ?,
+//         qualification = ?, passout_year = ?, cat_id = ?, reference_id = ?,
+//         source_id = ?, lead_status = ?, lead_stage_id = ?, lead_sub_stage_id = ?,
+//         call_remark = ?, call_duration = ?, follow_up_date = ?, follow_up_time = ?
+//        WHERE master_id = ?`,
+//       [
+//         name,
+//         number,
+//         email,
+//         address,
+//         area_id,
+//         qualification,
+//         passout_year,
+//         cat_id,
+//         reference_id,
+//         source_id,
+//         lead_status,
+//         lead_stage_id,
+//         lead_sub_stage_id,
+//         call_remark || remark || null,
+//         call_duration || null,
+//         follow_up_date || null,
+//         follow_up_time || null,
+//         master_id,
+//       ],
+//     );
 
-    /* ------------------------------------------------
-       3️⃣ Update assignment if changed
-    ------------------------------------------------ */
-    let assignmentChanged = false;
-    let newAssignedUserIdForLog = null;
+//     /* ------------------------------------------------
+//        3️⃣ Update assignment if changed
+//     ------------------------------------------------ */
+//     let assignmentChanged = false;
+//     let newAssignedUserIdForLog = null;
 
-    if (
-      assignment_id &&
-      assign_id &&
-      Number(assign_id) !== Number(currentAssignedUserId)
-    ) {
-      const [[user]] = await db.query(
-        `SELECT name FROM users WHERE user_id = ?`,
-        [assign_id],
-      );
+//     if (
+//       assignment_id &&
+//       assign_id &&
+//       Number(assign_id) !== Number(currentAssignedUserId)
+//     ) {
+//       const [[user]] = await db.query(
+//         `SELECT name FROM users WHERE user_id = ?`,
+//         [assign_id],
+//       );
 
-      if (user) {
-        assignmentChanged = true;
-        newAssignedUserIdForLog = assign_id; // ⭐ STORE NEW USER
+//       if (user) {
+//         assignmentChanged = true;
+//         newAssignedUserIdForLog = assign_id; // ⭐ STORE NEW USER
 
-        await db.query(
-          `UPDATE assignments
-           SET assigned_to = ?, assigned_to_user_id = ?
-           WHERE assign_id = ?`,
-          [user.name, assign_id, assignment_id],
-        );
-      }
-    }
+//         await db.query(
+//           `UPDATE assignments
+//            SET assigned_to = ?, assigned_to_user_id = ?
+//            WHERE assign_id = ?`,
+//           [user.name, assign_id, assignment_id],
+//         );
+//       }
+//     }
 
-    /* ------------------------------------------------
-       4️⃣ Insert log if stage OR assignment changed
-    ------------------------------------------------ */
-    if (
-      previousStageId !== lead_stage_id ||
-      previousSubStageId !== lead_sub_stage_id ||
-      assignmentChanged
-    ) {
-      const [[newStage]] = await db.query(
-        `SELECT stage_name FROM lead_stage WHERE stage_id = ?`,
-        [lead_stage_id],
-      );
+//     /* ------------------------------------------------
+//        4️⃣ Insert log if stage OR assignment changed
+//     ------------------------------------------------ */
+//     if (
+//       previousStageId !== lead_stage_id ||
+//       previousSubStageId !== lead_sub_stage_id ||
+//       assignmentChanged
+//     ) {
+//       const [[newStage]] = await db.query(
+//         `SELECT stage_name FROM lead_stage WHERE stage_id = ?`,
+//         [lead_stage_id],
+//       );
 
-      const [[newSubStage]] = await db.query(
-        `SELECT lead_sub_stage_name FROM lead_sub_stage WHERE lead_sub_stage_id = ?`,
-        [lead_sub_stage_id],
-      );
+//       const [[newSubStage]] = await db.query(
+//         `SELECT lead_sub_stage_name FROM lead_sub_stage WHERE lead_sub_stage_id = ?`,
+//         [lead_sub_stage_id],
+//       );
 
-      await db.query(
-        `INSERT INTO lead_stage_logs
-         (
-           master_id,
-           previous_leads,
-           previous_sub_leads,
-           new_leads,
-           new_sub_leads,
-           remark,
-           previous_assigned_user_id
-         )
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          master_id,
-          previous_stage_name || null,
-          previous_sub_stage_name || null,
-          newStage?.stage_name || null,
-          newSubStage?.lead_sub_stage_name || null,
-          call_remark || remark || null,
+//       await db.query(
+//         `INSERT INTO lead_stage_logs
+//          (
+//            master_id,
+//            previous_leads,
+//            previous_sub_leads,
+//            new_leads,
+//            new_sub_leads,
+//            remark,
+//            previous_assigned_user_id
+//          )
+//          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           master_id,
+//           previous_stage_name || null,
+//           previous_sub_stage_name || null,
+//           newStage?.stage_name || null,
+//           newSubStage?.lead_sub_stage_name || null,
+//           call_remark || remark || null,
 
-          // ⭐ NEW ASSIGNED USER STORED HERE
-          assignmentChanged ? newAssignedUserIdForLog : null,
-        ],
-      );
-    }
+//           // ⭐ NEW ASSIGNED USER STORED HERE
+//           assignmentChanged ? newAssignedUserIdForLog : null,
+//         ],
+//       );
+//     }
 
-    return res.json({
-      success: true,
-      message: 'Lead updated successfully',
-      assignment_updated: assignmentChanged,
-    });
-  } catch (error) {
-    console.error('❌ Error updating lead:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
-  }
-};
+//     return res.json({
+//       success: true,
+//       message: 'Lead updated successfully',
+//       assignment_updated: assignmentChanged,
+//     });
+//   } catch (error) {
+//     console.error('❌ Error updating lead:', error);
+//     return res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
 
 // export const importRawData = async (req, res) => {
 //   const connection = await db.getConnection();
@@ -2555,6 +2555,198 @@ export const updateLeadWithStageLogs = async (req, res) => {
 //     connection.release();
 //   }
 // };
+
+export const updateLeadWithStageLogs = async (req, res) => {
+  const {
+    name,
+    number,
+    email,
+    address,
+    area_id,
+    qualification,
+    passout_year,
+    cat_id,
+    reference_id,
+    source_id,
+    lead_status, // win / lose / invalid / ''
+    lead_stage_id,
+    lead_sub_stage_id,
+    remark,
+    call_duration,
+    call_remark,
+    assign_id,
+    follow_up_date,
+    follow_up_time,
+  } = req.body;
+
+  const { master_id } = req.params;
+
+  try {
+    /* ------------------------------------------------
+       1️⃣ Fetch existing lead, stage & assignment
+    ------------------------------------------------ */
+    const [oldLead] = await db.query(
+      `SELECT 
+        rd.assign_id AS assignment_id,
+        rd.lead_stage_id,
+        rd.lead_sub_stage_id,
+        rd.status,                                  -- 🔥 IMPORTANT
+        ls.stage_name AS previous_stage_name,
+        lss.lead_sub_stage_name AS previous_sub_stage_name,
+        asg.assigned_to_user_id AS currentAssignedUserId
+       FROM raw_data rd
+       LEFT JOIN lead_stage ls ON rd.lead_stage_id = ls.stage_id
+       LEFT JOIN lead_sub_stage lss ON rd.lead_sub_stage_id = lss.lead_sub_stage_id
+       LEFT JOIN assignments asg ON rd.assign_id = asg.assign_id
+       WHERE rd.master_id = ?`,
+      [master_id],
+    );
+
+    if (!oldLead.length) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+
+    const {
+      assignment_id,
+      lead_stage_id: previousStageId,
+      lead_sub_stage_id: previousSubStageId,
+      previous_stage_name,
+      previous_sub_stage_name,
+      currentAssignedUserId,
+      status, // 🔥 Assigned / Not Assigned
+    } = oldLead[0];
+
+    /* ------------------------------------------------
+       2️⃣ Determine FINAL lead_status (🔥 CORE FIX)
+    ------------------------------------------------ */
+    let finalLeadStatus = 'Inactive';
+
+    // If assigned → Active
+    if (status === 'Assigned') {
+      finalLeadStatus = 'Active';
+    }
+
+    // If admin explicitly selected Win/Lose/Invalid → override
+    if (['win', 'lose', 'invalid'].includes(lead_status?.toLowerCase())) {
+      finalLeadStatus = lead_status;
+    }
+
+    /* ------------------------------------------------
+       3️⃣ Update raw_data
+    ------------------------------------------------ */
+    await db.query(
+      `UPDATE raw_data SET 
+        name = ?, number = ?, email = ?, address = ?, area_id = ?,
+        qualification = ?, passout_year = ?, cat_id = ?, reference_id = ?,
+        source_id = ?, lead_status = ?, lead_stage_id = ?, lead_sub_stage_id = ?,
+        call_remark = ?, call_duration = ?, follow_up_date = ?, follow_up_time = ?
+       WHERE master_id = ?`,
+      [
+        name,
+        number,
+        email,
+        address,
+        area_id,
+        qualification,
+        passout_year,
+        cat_id,
+        reference_id,
+        source_id,
+
+        finalLeadStatus, // 🔥 FIXED
+
+        lead_stage_id,
+        lead_sub_stage_id,
+        call_remark || remark || null,
+        call_duration || null,
+        follow_up_date || null,
+        follow_up_time || null,
+        master_id,
+      ],
+    );
+
+    /* ------------------------------------------------
+       4️⃣ Update assignment if changed
+    ------------------------------------------------ */
+    let assignmentChanged = false;
+    let newAssignedUserIdForLog = null;
+
+    if (
+      assignment_id &&
+      assign_id &&
+      Number(assign_id) !== Number(currentAssignedUserId)
+    ) {
+      const [[user]] = await db.query(
+        `SELECT name FROM users WHERE user_id = ?`,
+        [assign_id],
+      );
+
+      if (user) {
+        assignmentChanged = true;
+        newAssignedUserIdForLog = assign_id;
+
+        await db.query(
+          `UPDATE assignments
+           SET assigned_to = ?, assigned_to_user_id = ?
+           WHERE assign_id = ?`,
+          [user.name, assign_id, assignment_id],
+        );
+      }
+    }
+
+    /* ------------------------------------------------
+       5️⃣ Insert stage log if stage or assignment changed
+    ------------------------------------------------ */
+    if (
+      previousStageId !== lead_stage_id ||
+      previousSubStageId !== lead_sub_stage_id ||
+      assignmentChanged
+    ) {
+      const [[newStage]] = await db.query(
+        `SELECT stage_name FROM lead_stage WHERE stage_id = ?`,
+        [lead_stage_id],
+      );
+
+      const [[newSubStage]] = await db.query(
+        `SELECT lead_sub_stage_name FROM lead_sub_stage WHERE lead_sub_stage_id = ?`,
+        [lead_sub_stage_id],
+      );
+
+      await db.query(
+        `INSERT INTO lead_stage_logs
+         (
+           master_id,
+           previous_leads,
+           previous_sub_leads,
+           new_leads,
+           new_sub_leads,
+           remark,
+           previous_assigned_user_id
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          master_id,
+          previous_stage_name || null,
+          previous_sub_stage_name || null,
+          newStage?.stage_name || null,
+          newSubStage?.lead_sub_stage_name || null,
+          call_remark || remark || null,
+          assignmentChanged ? newAssignedUserIdForLog : null,
+        ],
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: 'Lead updated successfully',
+      assignment_updated: assignmentChanged,
+      lead_status: finalLeadStatus,
+    });
+  } catch (error) {
+    console.error('❌ Error updating lead:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 
 export const importRawData = async (req, res) => {
   const connection = await db.getConnection();

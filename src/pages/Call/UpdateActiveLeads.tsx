@@ -168,12 +168,52 @@ const UpdateActiveLeads = ({
     }
   }, [open, leadData]);
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const updateData = {
+  //     ...formData,
+  //     lead_status: selectedType,
+  //     lead_stage_id: callStatus,
+  //     lead_sub_stage_id: subStatus,
+  //     call_duration: formData.call_duration,
+  //     call_remark: formData.call_remark,
+  //     remark: formData.remark || '',
+  //   };
+
+  //   try {
+  //     await axios.put(
+  //       `${BASE_URL}api/update-lead/${leadData.master_id}`,
+  //       updateData,
+  //       { withCredentials: true },
+  //     );
+
+  //     // ✅ SUCCESS MESSAGE
+  //     toast.success('Lead updated successfully');
+
+  //     onClose();
+  //     setRefeshTrigger((prev) => prev + 1);
+  //   } catch (error) {
+  //     console.error('Error updating lead:', error);
+
+  //     toast.error('Failed to update lead. Please try again.');
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const updateData = {
       ...formData,
-      lead_status: selectedType,
+
+      // 🔥 IMPORTANT FIX
+      lead_status:
+        selectedType === 'win' ||
+        selectedType === 'lose' ||
+        selectedType === 'invalid'
+          ? selectedType
+          : 'Active',
+
       lead_stage_id: callStatus,
       lead_sub_stage_id: subStatus,
       call_duration: formData.call_duration,
@@ -188,14 +228,11 @@ const UpdateActiveLeads = ({
         { withCredentials: true },
       );
 
-      // ✅ SUCCESS MESSAGE
       toast.success('Lead updated successfully');
-
       onClose();
       setRefeshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error updating lead:', error);
-
       toast.error('Failed to update lead. Please try again.');
     }
   };
