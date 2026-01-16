@@ -978,6 +978,7 @@ import { FaEdit, FaHistory } from 'react-icons/fa';
 import LeadDetailsPage from './LeadDetailsPage.js';
 import UpdateActiveLeads from './UpdateActiveLeads.js';
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 interface Category {
   cat_id: number;
@@ -1574,7 +1575,16 @@ const LoseLeads = () => {
             {paginatedData.map((lead, index) => (
               <tr key={lead.master_id}>
                 <td className="p-3">{startIndex + index + 1}</td>
-                <td className="p-3">{lead.name}</td>
+                <td className="p-3">
+                  {' '}
+                  <Link
+                    to={`/leads/${lead.master_id}`}
+                    className="text-blue-600 hover:underline font-medium"
+                    target="_blank"
+                  >
+                    {lead.name}
+                  </Link>
+                </td>
                 <td className="border-b py-3 px-4 dark:border-strokedark">
                   {lead.number
                     ? (() => {

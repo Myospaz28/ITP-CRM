@@ -8,6 +8,7 @@ import UpdateActiveLeads from './UpdateActiveLeads';
 import { ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup';
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 /* ================= INTERFACES ================= */
 
@@ -342,6 +343,20 @@ const FollowUpLeads: React.FC = () => {
         ...pageIds.filter((id) => !prev.includes(id)),
       ]);
     }
+  };
+
+  const PAGE_WINDOW = 5;
+
+  const getVisiblePages = () => {
+    let start = Math.max(1, currentPage - Math.floor(PAGE_WINDOW / 2));
+    let end = start + PAGE_WINDOW - 1;
+
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - PAGE_WINDOW + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
   /* ================= UI ================= */
@@ -707,7 +722,16 @@ const FollowUpLeads: React.FC = () => {
                   />
                 </td>
                 <td className="border-b py-3 px-4">{startIndex + i + 1}</td>
-                <td className="border-b py-3 px-4">{lead.name || 'NA'}</td>
+                <td className="border-b py-3 px-4">
+                  {' '}
+                  <Link
+                    to={`/leads/${lead.master_id}`}
+                    className="text-blue-600 hover:underline font-medium"
+                    target="_blank"
+                  >
+                    {lead.name || 'NA'}
+                  </Link>
+                </td>
                 <td className="border-b py-3 px-4 dark:border-strokedark">
                   {lead.number
                     ? (() => {
@@ -793,6 +817,87 @@ const FollowUpLeads: React.FC = () => {
             ))}
           </tbody>
         </table>
+      </div>
+      {/* ================= PAGINATION ================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t mt-6">
+        {/* INFO */}
+        <div className="text-sm text-gray-600">
+          Showing {filteredData.length === 0 ? 0 : startIndex + 1} to{' '}
+          {Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} of{' '}
+          {filteredData.length} results
+        </div>
+
+        {/* CONTROLS */}
+        <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
+          {/* FIRST */}
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 border rounded disabled:opacity-40"
+          >
+            «
+          </button>
+
+          {/* PREV */}
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 border rounded disabled:opacity-40"
+          >
+            ‹
+          </button>
+
+          {/* PAGE NUMBERS (WINDOWED) */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(
+              (page) =>
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 2 && page <= currentPage + 2),
+            )
+            .map((page, index, arr) => {
+              const prev = arr[index - 1];
+
+              return (
+                <React.Fragment key={page}>
+                  {/* DOTS */}
+                  {prev && page - prev > 1 && (
+                    <span className="px-2 text-gray-400">…</span>
+                  )}
+
+                  <button
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1.5 border rounded text-sm transition
+                ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'hover:bg-gray-100'
+                }`}
+                  >
+                    {page}
+                  </button>
+                </React.Fragment>
+              );
+            })}
+
+          {/* NEXT */}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 border rounded disabled:opacity-40"
+          >
+            ›
+          </button>
+
+          {/* LAST */}
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 border rounded disabled:opacity-40"
+          >
+            »
+          </button>
+        </div>
       </div>
 
       {/* MODALS */}

@@ -1170,6 +1170,60 @@ export const addSingleRawData = async (req, res) => {
   }
 };
 
+export const checkDuplicateRawData = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { number, email } = req.query;
+
+    if (!number && !email) {
+      return res.status(400).json({
+        message: 'Number or Email required',
+      });
+    }
+
+    let conditions = [];
+    let values = [];
+
+    if (number) {
+      conditions.push('number = ?');
+      values.push(number);
+    }
+
+    if (email) {
+      conditions.push('email = ?');
+      values.push(email);
+    }
+
+    const query = `
+      SELECT master_id, name, number, email
+      FROM raw_data
+      WHERE ${conditions.join(' OR ')}
+      LIMIT 5
+    `;
+
+    const [rows] = await db.query(query, values);
+
+    if (rows.length > 0) {
+      return res.status(200).json({
+        exists: true,
+        duplicates: rows,
+      });
+    }
+
+    return res.status(200).json({
+      exists: false,
+    });
+  } catch (error) {
+    console.error('❌ Duplicate check error:', error);
+    return res.status(500).json({
+      message: 'Server error while checking duplicate',
+    });
+  }
+};
+
 export const getLeadStageLogsWithAssignment1 = async (req, res) => {
   const { master_id } = req.params;
 

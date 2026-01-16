@@ -8,6 +8,7 @@ import LeadDetailsPage from './LeadDetailsPage.js';
 import { ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup.js';
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 /* ================= INTERFACES ================= */
 
@@ -193,11 +194,13 @@ const AllLeads: React.FC = () => {
   const normalizeNumber = (v?: string | null) => {
     if (!v) return '';
 
-    let digits = String(v).replace(/[^0-9]/g, '');
+    let digits = String(v)
+      .replace(/[^0-9]/g, '') // remove + - ` space etc
+      .trim();
 
-    // remove 91 only if it's country code (91 + 10 digit number)
-    if (digits.length === 12 && digits.startsWith('91')) {
-      digits = digits.slice(2);
+    // 🔥 Always keep last 10 digits (India numbers)
+    if (digits.length > 10) {
+      digits = digits.slice(-10);
     }
 
     return digits;
@@ -260,7 +263,7 @@ const AllLeads: React.FC = () => {
       selectedUsers: [],
       selectedSource: selectedSources,
       selectedStage: selectedStages,
-      selectedStatus: selectedStatuses,
+      selectedStatus: [],
       fromDate: '',
       toDate: '',
       modifiedFromDate: '',
@@ -301,21 +304,28 @@ const AllLeads: React.FC = () => {
     const createdDate = lead.created_at
       ? new Date(lead.created_at).toISOString().split('T')[0]
       : null;
+
     const modifiedDate = lead.last_modified_date
       ? lead.last_modified_date.split('T')[0]
       : null;
+
     return (
       (lead.name?.toLowerCase().includes(term) ||
         lead.assigned_to?.toLowerCase().includes(term) ||
         lead.source_name?.toLowerCase().includes(term) ||
         lead.stage_name?.toLowerCase().includes(term) ||
-        (numberTerm && leadNumber.includes(numberTerm))) && // ✅ FIX
+        (numberTerm && leadNumber.includes(numberTerm))) &&
       (!appliedFilters.selectedUsers.length ||
         appliedFilters.selectedUsers.includes(lead.assigned_to)) &&
       (!appliedFilters.selectedSource.length ||
         appliedFilters.selectedSource.includes(lead.source_name)) &&
       (!appliedFilters.selectedStage.length ||
         appliedFilters.selectedStage.includes(lead.stage_name)) &&
+      /* ✅ STATUS FILTER */
+      (!appliedFilters.selectedStatus.length ||
+        appliedFilters.selectedStatus.includes(
+          lead.lead_status?.toLowerCase(),
+        )) &&
       (!appliedFilters.fromDate ||
         (createdDate && createdDate >= appliedFilters.fromDate)) &&
       (!appliedFilters.toDate ||
@@ -377,6 +387,32 @@ const AllLeads: React.FC = () => {
     });
   };
   /* ================= UI ================= */
+
+  const handleBulkDelete = async () => {
+    if (selectedLeadIds.length === 0) return;
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedLeadIds.length} leads?`,
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.post(
+        `${BASE_URL}api/rawdata/bulk-delete`,
+        { leadIds: selectedLeadIds },
+        { withCredentials: true },
+      );
+
+      alert('Leads deleted successfully');
+
+      setSelectedLeadIds([]);
+      fetchLeads(); // refresh list
+    } catch (err) {
+      console.error('Bulk delete failed', err);
+      alert('Failed to delete leads');
+    }
+  };
 
   return (
     <div className="p-4">
@@ -639,6 +675,66 @@ const AllLeads: React.FC = () => {
             </div>
           )}
         </div>
+        {/* STATUS */}
+        <div className="relative" ref={statusDropdownRef}>
+          <label className="block text-sm font-medium mb-1">
+            Filter by Status
+          </label>
+
+          {/* FAKE SELECT */}
+          <div
+            onClick={() => setOpenStatusDropdown((p) => !p)}
+            className="w-full p-2 border border-gray-300 rounded bg-white cursor-pointer flex justify-between items-center"
+          >
+            <span className="text-sm">
+              {selectedStatuses.length === 0
+                ? 'All Status'
+                : `${selectedStatuses.length} Selected`}
+            </span>
+            <span className="text-gray-500">▼</span>
+          </div>
+
+          {/* DROPDOWN */}
+          {openStatusDropdown && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              {/* ALL */}
+              <label className="flex items-center gap-2 px-3 py-2 border-b cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedStatuses.length === 0}
+                  onChange={() => {
+                    setSelectedStatuses([]);
+                    setCurrentPage(1);
+                  }}
+                />
+                <span className="font-semibold text-sm">All Status</span>
+              </label>
+
+              {['active', 'inactive', 'win', 'lost', 'invalid'].map(
+                (status) => (
+                  <label
+                    key={status}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(status)}
+                      onChange={() => {
+                        setSelectedStatuses((prev) =>
+                          prev.includes(status)
+                            ? prev.filter((x) => x !== status)
+                            : [...prev, status],
+                        );
+                        setCurrentPage(1);
+                      }}
+                    />
+                    <span className="text-sm capitalize">{status}</span>
+                  </label>
+                ),
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-4 mb-6">
@@ -707,6 +803,20 @@ const AllLeads: React.FC = () => {
               Transfer Leads
             </button>
           )}
+          {userRole !== 'tele-caller' && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={selectedLeadIds.length === 0}
+              className={`px-4 py-2 rounded flex items-center gap-2 transition
+      ${
+        selectedLeadIds.length === 0
+          ? 'bg-gray-400 cursor-not-allowed'
+          : 'bg-red-600 text-white hover:bg-red-700'
+      }`}
+            >
+              🗑️
+            </button>
+          )}
           <button
             onClick={handleApplyFilters}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
@@ -762,7 +872,16 @@ const AllLeads: React.FC = () => {
                     />
                   </td>
 
-                  <td className="border-b py-3 px-4">{lead.name}</td>
+                  {/* <td className="border-b py-3 px-4">{lead.name}</td> */}
+                  <td className="border-b py-3 px-4">
+                    <Link
+                      to={`/leads/${lead.master_id}`}
+                      className="text-blue-600 hover:underline font-medium"
+                      target="_blank"
+                    >
+                      {lead.name}
+                    </Link>
+                  </td>
                   <td className="border-b py-3 px-4">
                     {lead.number ? normalizeNumber(lead.number) : 'NA'}
                   </td>

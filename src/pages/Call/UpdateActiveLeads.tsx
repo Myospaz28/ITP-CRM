@@ -261,7 +261,7 @@ const UpdateActiveLeads = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 overflow-y-auto">
       <div className="bg-white p-6 rounded shadow-md w-11/12 max-w-3xl mt-20 max-h-[90vh] overflow-y-auto dark:border-strokedark dark:bg-boxdark ml-20">
         <div className="flex justify-between items-center border-b-2 mb-6 pb-3 dark:border-strokedark">
-          <h2 className="text-xl font-bold dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Edit Lead - {leadData.name}
           </h2>
           <button
@@ -272,17 +272,24 @@ const UpdateActiveLeads = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-6 mb-6">
+        <div className="flex flex-wrap items-center gap-6 mb-6">
           {['invalid', 'lose', 'win'].map((type) => (
-            <label key={type} className="flex items-center gap-2">
+            <label
+              key={type}
+              className="flex items-center gap-2 
+                 text-[15px] md:text-[16px] 
+                 font-semibold 
+                 text-gray-900 dark:text-gray-200"
+            >
               <input
                 type="checkbox"
+                className="w-4 h-4 accent-green-600"
                 checked={selectedType === type}
                 onChange={() => {
                   if (selectedType === type) {
-                    setSelectedType(''); // uncheck
+                    setSelectedType('');
                   } else {
-                    setSelectedType(type); // check
+                    setSelectedType(type);
                   }
                 }}
               />
@@ -295,12 +302,12 @@ const UpdateActiveLeads = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <div>
-                <h3 className="text-md font-semibold mb-3 dark:text-white border-b pb-2">
+                <h3 className="text-lg md:text-xl font-bold mb-3 text-gray-900 dark:text-gray-100 border-b pb-2">
                   Basic Information
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Full Name
                     </label>
                     <input
@@ -313,7 +320,7 @@ const UpdateActiveLeads = ({
                     />
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Mobile Number
                     </label>
                     <input
@@ -326,7 +333,7 @@ const UpdateActiveLeads = ({
                     />
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Email
                     </label>
                     <input
@@ -338,7 +345,7 @@ const UpdateActiveLeads = ({
                     />
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Address
                     </label>
                     <textarea
@@ -351,7 +358,7 @@ const UpdateActiveLeads = ({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block mb-1 text-sm dark:text-white">
+                      <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                         Qualification
                       </label>
                       <input
@@ -363,7 +370,7 @@ const UpdateActiveLeads = ({
                       />
                     </div>
                     <div>
-                      <label className="block mb-1 text-sm dark:text-white">
+                      <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200`">
                         Passout Year
                       </label>
                       <input
@@ -377,7 +384,7 @@ const UpdateActiveLeads = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Products
                     </label>
                     <input
@@ -390,7 +397,7 @@ const UpdateActiveLeads = ({
                   </div>
 
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Call Duration
                     </label>
                     <textarea
@@ -409,12 +416,12 @@ const UpdateActiveLeads = ({
             {/* Right Column - Lead Details & Status */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-md font-semibold mb-3 dark:text-white border-b pb-2">
+                <h3 className="text-lg md:text-xl font-bold mb-3 text-gray-900 dark:text-gray-100 border-b pb-2">
                   Lead Details & Status
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Category
                     </label>
                     <select
@@ -432,7 +439,7 @@ const UpdateActiveLeads = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Reference
                     </label>
                     <select
@@ -457,7 +464,7 @@ const UpdateActiveLeads = ({
                   </div>
 
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Source
                     </label>
                     <select
@@ -475,7 +482,7 @@ const UpdateActiveLeads = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Center
                     </label>
                     <select
@@ -493,7 +500,7 @@ const UpdateActiveLeads = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Assigned To
                     </label>
                     <select
@@ -521,7 +528,7 @@ const UpdateActiveLeads = ({
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Lead Stage
                     </label>
                     <select
@@ -544,7 +551,7 @@ const UpdateActiveLeads = ({
                   </div>
 
                   <div>
-                    <label className="block mb-1 text-sm dark:text-white">
+                    <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                       Lead Sub Stage
                     </label>
                     <select
@@ -569,11 +576,12 @@ const UpdateActiveLeads = ({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 text-sm dark:text-white">
+              <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                 Follow Up Date
               </label>
               <input
                 type="date"
+                required
                 name="follow_up_date"
                 value={formData.follow_up_date}
                 onChange={handleInputChange}
@@ -582,11 +590,12 @@ const UpdateActiveLeads = ({
             </div>
 
             <div>
-              <label className="block mb-1 text-sm dark:text-white">
+              <label className="block mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
                 Follow Up Time
               </label>
               <input
                 type="time"
+                required
                 name="follow_up_time"
                 value={formData.follow_up_time}
                 onChange={handleInputChange}
@@ -596,7 +605,9 @@ const UpdateActiveLeads = ({
           </div>
 
           <div>
-            <label className=" mb-1 text-sm dark:text-white">Call Remark</label>
+            <label className=" mb-1 text-[15px] md:text-[16px] font-semibold text-gray-800 dark:text-gray-200">
+              Call Remark
+            </label>
             <textarea
               name="call_remark"
               value={formData.call_remark}

@@ -20,6 +20,7 @@ import {
   getFollowUpLeads,
   getLeadById,
   getAllRawData,
+  bulkDeleteLeads,
 } from '../controllers/teleCallerController.js';
 
 const router = express.Router();
@@ -63,5 +64,7 @@ router.get('/followup-leads', getFollowUpLeads);
 router.get('/lead/:id', getLeadById);
 
 router.get('/rawdata/all', getAllRawData);
+
+router.post('/rawdata/bulk-delete', bulkDeleteLeads);
 
 export default router;

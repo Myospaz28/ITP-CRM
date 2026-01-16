@@ -51,6 +51,8 @@ import NewLeads from './pages/Call/NewLeads';
 import AddNewLead from './pages/Rawdata/AddNewLead';
 import FollowUpLeads from './pages/Call/FollowUpLeads';
 import AllLeads from './pages/Call/AllLeads';
+import LeadDetailsPage from './pages/Call/LeadDetailsPage';
+import LeadViewPage from './pages/Call/LeadViewPage';
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -454,6 +456,7 @@ function App() {
                 </DefaultLayout>
               }
             />
+            <Route path="/leads/:id" element={<LeadViewPage />} />
           </>
         ) : (
           <Route path="/signin" element={<Navigate to="/signin" />} />

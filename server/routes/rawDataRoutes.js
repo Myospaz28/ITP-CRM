@@ -4,12 +4,15 @@ import {
   getAllRawData,
   importRawData,
   updateRawData,
-  deleteClient, deleteMultipleClients  ,addSingleRawData, 
+  deleteClient,
+  deleteMultipleClients,
+  addSingleRawData,
   updateLeadWithStageLogs,
   getLeadStageLogsWithAssignment,
   getAllWinRawData,
   getAllLoseRawData,
-  getAllInvalidRawData
+  getAllInvalidRawData,
+  checkDuplicateRawData,
 } from '../controllers/rawDataController.js';
 
 const router = express.Router();
@@ -23,11 +26,13 @@ router.delete('/master-data/:master_id', deleteClient);
 router.post('/master-data/delete-multiple', deleteMultipleClients);
 
 router.post('/master-data/add-single', addSingleRawData);
-router.put("/update-lead/:master_id", updateLeadWithStageLogs);
-router.get("/lead-details/:master_id", getLeadStageLogsWithAssignment);
-router.get("/getAllWinRawData", getAllWinRawData);
-router.get("/getallloserawdata", getAllLoseRawData);
+router.get('/check-duplicate', checkDuplicateRawData);
 
-router.get("/getallinvalidrawdata", getAllInvalidRawData);
+router.put('/update-lead/:master_id', updateLeadWithStageLogs);
+router.get('/lead-details/:master_id', getLeadStageLogsWithAssignment);
+router.get('/getAllWinRawData', getAllWinRawData);
+router.get('/getallloserawdata', getAllLoseRawData);
+
+router.get('/getallinvalidrawdata', getAllInvalidRawData);
 
 export default router;

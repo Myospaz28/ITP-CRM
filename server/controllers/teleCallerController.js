@@ -2950,3 +2950,30 @@ export const getAllRawData = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+export const bulkDeleteLeads = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { leadIds } = req.body;
+
+    if (!Array.isArray(leadIds) || leadIds.length === 0) {
+      return res.status(400).json({ message: 'No leads selected' });
+    }
+
+    // 🔥 delete from raw_data
+    await db.query(`DELETE FROM raw_data WHERE master_id IN (?)`, [leadIds]);
+
+    // (optional) assignments / logs bhi delete karna ho to
+    // await db.query(`DELETE FROM lead_logs WHERE master_id IN (?)`, [leadIds]);
+
+    return res.status(200).json({
+      message: `${leadIds.length} leads deleted successfully`,
+    });
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

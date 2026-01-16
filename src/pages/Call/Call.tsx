@@ -667,6 +667,7 @@ import UpdateRawData from '../Rawdata/UpdateRawData.js';
 import { XCircle, ArrowRightLeft } from 'lucide-react';
 import TransferLeadsPopup from './TransferLeadsPopup.js';
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 interface Category {
   cat_id: number;
@@ -1312,7 +1313,13 @@ const CallList = () => {
                 </td>
 
                 <td className="border-b py-2 px-2 dark:border-strokedark truncate">
-                  {client.name}
+                  <Link
+                    to={`/leads/${client.master_id}`}
+                    className="text-blue-600 hover:underline font-medium"
+                    target="_blank"
+                  >
+                    {client.name}
+                  </Link>
                 </td>
 
                 <td className="border-b py-3 px-4 dark:border-strokedark">
