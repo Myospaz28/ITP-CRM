@@ -1756,12 +1756,7 @@ const ActiveLeads = () => {
                   <td className="border-b py-3 px-4 dark:border-strokedark">
                     <input
                       type="checkbox"
-                      checked={
-                        paginatedData.length > 0 &&
-                        paginatedData.every((l) =>
-                          selectedLeadIds.includes(Number(l.master_id)),
-                        )
-                      }
+                      checked={selectedLeadIds.includes(Number(lead.master_id))}
                       onChange={() => toggleLead(Number(lead.master_id))}
                     />
                   </td>
