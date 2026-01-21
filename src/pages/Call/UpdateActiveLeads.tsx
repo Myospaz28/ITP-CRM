@@ -200,13 +200,51 @@ const UpdateActiveLeads = ({
   //   }
   // };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const updateData = {
+  //     ...formData,
+
+  //     // 🔥 IMPORTANT FIX
+  //     lead_status:
+  //       selectedType === 'win' ||
+  //       selectedType === 'lose' ||
+  //       selectedType === 'invalid'
+  //         ? selectedType
+  //         : 'Active',
+
+  //     lead_stage_id: callStatus,
+  //     lead_sub_stage_id: subStatus,
+  //     call_duration: formData.call_duration,
+  //     call_remark: formData.call_remark,
+  //     remark: formData.remark || '',
+  //   };
+
+  //   try {
+  //     await axios.put(
+  //       `${BASE_URL}api/update-lead/${leadData.master_id}`,
+  //       updateData,
+  //       { withCredentials: true },
+  //     );
+
+  //     toast.success('Lead updated successfully');
+  //     onClose();
+  //     setRefeshTrigger((prev) => prev + 1);
+  //   } catch (error) {
+  //     console.error('Error updating lead:', error);
+  //     toast.error('Failed to update lead. Please try again.');
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isClosedLead = selectedType === 'invalid' || selectedType === 'lose';
 
     const updateData = {
       ...formData,
 
-      // 🔥 IMPORTANT FIX
       lead_status:
         selectedType === 'win' ||
         selectedType === 'lose' ||
@@ -216,6 +254,11 @@ const UpdateActiveLeads = ({
 
       lead_stage_id: callStatus,
       lead_sub_stage_id: subStatus,
+
+      // 🔥 IMPORTANT PART
+      follow_up_date: isClosedLead ? null : formData.follow_up_date,
+      follow_up_time: isClosedLead ? null : formData.follow_up_time,
+
       call_duration: formData.call_duration,
       call_remark: formData.call_remark,
       remark: formData.remark || '',
@@ -581,7 +624,9 @@ const UpdateActiveLeads = ({
               </label>
               <input
                 type="date"
-                required
+                required={
+                  !(selectedType === 'invalid' || selectedType === 'lose')
+                }
                 name="follow_up_date"
                 value={formData.follow_up_date}
                 onChange={handleInputChange}
@@ -595,7 +640,6 @@ const UpdateActiveLeads = ({
               </label>
               <input
                 type="time"
-                required
                 name="follow_up_time"
                 value={formData.follow_up_time}
                 onChange={handleInputChange}
