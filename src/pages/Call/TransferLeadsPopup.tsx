@@ -623,7 +623,7 @@ const TransferLeadsPopup: React.FC<Props> = ({
         {
           leadIds: selectedLeadIds,
           userIds: selectedUsers,
-          remark: 'Transferred by admin',
+          remark: '',
           assignType:
             userRole === 'team lead'
               ? 'single'

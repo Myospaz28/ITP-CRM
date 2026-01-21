@@ -21,6 +21,7 @@ import {
   getLeadById,
   getAllRawData,
   bulkDeleteLeads,
+  getLeadTransferLogs,
 } from '../controllers/teleCallerController.js';
 
 const router = express.Router();
@@ -66,5 +67,7 @@ router.get('/lead/:id', getLeadById);
 router.get('/rawdata/all', getAllRawData);
 
 router.post('/rawdata/bulk-delete', bulkDeleteLeads);
+
+router.get('/lead-transfer-logs', getLeadTransferLogs);
 
 export default router;

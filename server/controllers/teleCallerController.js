@@ -2141,20 +2141,174 @@ export const assignLeads = async (req, res) => {
   }
 };
 
+// export const transferLeads = async (req, res) => {
+//   const connection = await db.getConnection();
+
+//   try {
+//     if (!req.session.user) {
+//       return res.status(401).json({ message: 'Unauthorized' });
+//     }
+
+//     const {
+//       leadIds,
+//       userIds = [], // ⭐ changed
+//       remark,
+//       assignType = 'single',
+//     } = req.body;
+
+//     if (
+//       !Array.isArray(leadIds) ||
+//       !leadIds.length ||
+//       !Array.isArray(userIds) ||
+//       !userIds.length
+//     ) {
+//       return res.status(400).json({ message: 'Invalid request' });
+//     }
+
+//     await connection.beginTransaction();
+
+//     /* ===============================
+//        1️⃣ FETCH TARGET USERS
+//     =============================== */
+//     const [selectedUsers] = await connection.query(
+//       `
+//       SELECT user_id, name, role
+//       FROM users
+//       WHERE user_id IN (?)
+//       `,
+//       [userIds],
+//     );
+
+//     if (!selectedUsers.length) {
+//       throw new Error('Target users not found');
+//     }
+
+//     /* ===============================
+//        2️⃣ BUILD ASSIGNMENT USERS
+//        (MULTI TEAM SUPPORT)
+//     =============================== */
+//     let assignmentUsers = [];
+
+//     for (const user of selectedUsers) {
+//       if (user.role === 'team lead' && assignType === 'team') {
+//         const [telecallers] = await connection.query(
+//           `
+//           SELECT u.user_id, u.name
+//           FROM team_lead_assignment tla
+//           JOIN users u ON u.user_id = tla.tele_caller_id
+//           WHERE tla.lead_id = ?
+//           `,
+//           [user.user_id],
+//         );
+
+//         assignmentUsers.push(
+//           { user_id: user.user_id, name: user.name }, // team lead
+//           ...telecallers, // telecallers
+//         );
+//       } else {
+//         assignmentUsers.push({
+//           user_id: user.user_id,
+//           name: user.name,
+//         });
+//       }
+//     }
+
+//     // ❗ remove duplicate users (same telecaller in multiple teams)
+//     assignmentUsers = Array.from(
+//       new Map(assignmentUsers.map((u) => [u.user_id, u])).values(),
+//     );
+
+//     /* ===============================
+//        3️⃣ ROUND ROBIN TRANSFER
+//     =============================== */
+//     let userIndex = 0;
+
+//     for (const master_id of leadIds) {
+//       const assignee = assignmentUsers[userIndex % assignmentUsers.length];
+//       userIndex++;
+
+//       const [rows] = await connection.query(
+//         `
+//         SELECT rd.assign_id, rd.lead_stage_id, rd.lead_sub_stage_id,
+//                a.assigned_to_user_id
+//         FROM raw_data rd
+//         JOIN assignments a ON a.assign_id = rd.assign_id
+//         WHERE rd.master_id = ?
+//         `,
+//         [master_id],
+//       );
+
+//       if (!rows.length) continue;
+//       const lead = rows[0];
+
+//       /* ---- LOG (unchanged) ---- */
+//       if (lead.assigned_to_user_id) {
+//         await connection.query(
+//           `
+//           INSERT INTO lead_stage_logs
+//           (master_id, previous_assigned_user_id, remark)
+//           VALUES (?, ?, ?)
+//           `,
+//           [master_id, lead.assigned_to_user_id, remark || 'Lead transferred'],
+//         );
+//       }
+
+//       /* ---- UPDATE ASSIGNMENT ---- */
+//       await connection.query(
+//         `
+//         UPDATE assignments
+//         SET assigned_to = ?, assigned_to_user_id = ?
+//         WHERE assign_id = ?
+//         `,
+//         [assignee.name, assignee.user_id, lead.assign_id],
+//       );
+//     }
+
+//     await connection.commit();
+
+//     res.json({
+//       success: true,
+//       message:
+//         assignType === 'team'
+//           ? 'Leads transferred using multi-team round robin'
+//           : 'Leads transferred successfully',
+//       totalLeads: leadIds.length,
+//       totalUsers: assignmentUsers.length,
+//     });
+//   } catch (error) {
+//     await connection.rollback();
+//     console.error('❌ Transfer leads error:', error);
+//     res.status(500).json({
+//       message: 'Transfer failed',
+//       error: error.message,
+//     });
+//   } finally {
+//     connection.release();
+//   }
+// };
+
 export const transferLeads = async (req, res) => {
   const connection = await db.getConnection();
 
   try {
-    if (!req.session.user) {
+    /* ===============================
+       0️⃣ AUTH (MATCHING SESSION)
+    =============================== */
+    const sessionUser = req.session.user;
+
+    console.log('Session User:', sessionUser);
+
+    if (!sessionUser || !sessionUser.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const {
-      leadIds,
-      userIds = [], // ⭐ changed
-      remark,
-      assignType = 'single',
-    } = req.body;
+    const transferredBy = sessionUser.id;
+    const transferredByName = sessionUser.username;
+
+    /* ===============================
+       1️⃣ BODY
+    =============================== */
+    const { leadIds, userIds = [], assignType = 'single' } = req.body;
 
     if (
       !Array.isArray(leadIds) ||
@@ -2168,7 +2322,7 @@ export const transferLeads = async (req, res) => {
     await connection.beginTransaction();
 
     /* ===============================
-       1️⃣ FETCH TARGET USERS
+       2️⃣ FETCH USERS
     =============================== */
     const [selectedUsers] = await connection.query(
       `
@@ -2184,8 +2338,7 @@ export const transferLeads = async (req, res) => {
     }
 
     /* ===============================
-       2️⃣ BUILD ASSIGNMENT USERS
-       (MULTI TEAM SUPPORT)
+       3️⃣ BUILD ASSIGNMENT USERS
     =============================== */
     let assignmentUsers = [];
 
@@ -2202,8 +2355,8 @@ export const transferLeads = async (req, res) => {
         );
 
         assignmentUsers.push(
-          { user_id: user.user_id, name: user.name }, // team lead
-          ...telecallers, // telecallers
+          { user_id: user.user_id, name: user.name },
+          ...telecallers,
         );
       } else {
         assignmentUsers.push({
@@ -2213,13 +2366,12 @@ export const transferLeads = async (req, res) => {
       }
     }
 
-    // ❗ remove duplicate users (same telecaller in multiple teams)
     assignmentUsers = Array.from(
       new Map(assignmentUsers.map((u) => [u.user_id, u])).values(),
     );
 
     /* ===============================
-       3️⃣ ROUND ROBIN TRANSFER
+       4️⃣ ROUND ROBIN
     =============================== */
     let userIndex = 0;
 
@@ -2229,8 +2381,7 @@ export const transferLeads = async (req, res) => {
 
       const [rows] = await connection.query(
         `
-        SELECT rd.assign_id, rd.lead_stage_id, rd.lead_sub_stage_id,
-               a.assigned_to_user_id
+        SELECT rd.assign_id, a.assigned_to_user_id
         FROM raw_data rd
         JOIN assignments a ON a.assign_id = rd.assign_id
         WHERE rd.master_id = ?
@@ -2241,7 +2392,7 @@ export const transferLeads = async (req, res) => {
       if (!rows.length) continue;
       const lead = rows[0];
 
-      /* ---- LOG (unchanged) ---- */
+      /* OLD LOG */
       if (lead.assigned_to_user_id) {
         await connection.query(
           `
@@ -2249,11 +2400,15 @@ export const transferLeads = async (req, res) => {
           (master_id, previous_assigned_user_id, remark)
           VALUES (?, ?, ?)
           `,
-          [master_id, lead.assigned_to_user_id, remark || 'Lead transferred'],
+          [
+            master_id,
+            lead.assigned_to_user_id,
+            `Lead transferred by ${transferredByName}`,
+          ],
         );
       }
 
-      /* ---- UPDATE ASSIGNMENT ---- */
+      /* UPDATE ASSIGNMENT */
       await connection.query(
         `
         UPDATE assignments
@@ -2262,23 +2417,36 @@ export const transferLeads = async (req, res) => {
         `,
         [assignee.name, assignee.user_id, lead.assign_id],
       );
+
+      /* 🔥 TRANSFER LOG */
+      await connection.query(
+        `
+        INSERT INTO lead_transfer_logs
+        (master_id, transferred_by, transferred_to, transfer_type, remark)
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [
+          master_id,
+          transferredBy,
+          assignee.user_id,
+          assignType,
+          `Transferred by ${transferredByName}`,
+        ],
+      );
     }
 
     await connection.commit();
 
     res.json({
       success: true,
-      message:
-        assignType === 'team'
-          ? 'Leads transferred using multi-team round robin'
-          : 'Leads transferred successfully',
-      totalLeads: leadIds.length,
-      totalUsers: assignmentUsers.length,
+      message: 'Leads transferred successfully',
     });
   } catch (error) {
     await connection.rollback();
     console.error('❌ Transfer leads error:', error);
+
     res.status(500).json({
+      success: false,
       message: 'Transfer failed',
       error: error.message,
     });
@@ -2975,5 +3143,59 @@ export const bulkDeleteLeads = async (req, res) => {
   } catch (error) {
     console.error('Bulk delete error:', error);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/* =========================================
+   GET LEAD TRANSFER LOGS
+========================================= */
+export const getLeadTransferLogs = async (req, res) => {
+  try {
+    const { role, user_id } = req.user;
+
+    // ❌ Telecaller ko block (optional)
+    if (role === 'tele-caller') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    let sql = `
+      SELECT
+        l.id,
+        u1.name AS transferred_by,
+        u2.name AS transferred_to,
+        l.transfer_type,
+        l.lead_ids,
+        l.remark,
+        l.created_at
+      FROM lead_transfer_logs l
+      JOIN users u1 ON u1.user_id = l.transferred_by
+      JOIN users u2 ON u2.user_id = l.transferred_to
+    `;
+
+    const params = [];
+
+    // 🔐 Team lead sirf apne transfers dekhe
+    if (role === 'team lead') {
+      sql += ' WHERE l.transferred_by = ?';
+      params.push(user_id);
+    }
+
+    sql += ' ORDER BY l.created_at DESC';
+
+    const [rows] = await db.query(sql, params);
+
+    res.json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error('Get Transfer Logs Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch transfer logs',
+    });
   }
 };

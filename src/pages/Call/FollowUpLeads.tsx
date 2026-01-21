@@ -345,6 +345,21 @@ const FollowUpLeads: React.FC = () => {
     }
   };
 
+  const formatToIST = (utcDate) => {
+    if (!utcDate) return 'NA';
+
+    return new Date(utcDate).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
   const PAGE_WINDOW = 5;
 
   const getVisiblePages = () => {
@@ -762,9 +777,7 @@ const FollowUpLeads: React.FC = () => {
                   {formatDateTime(lead.follow_up_date, lead.follow_up_time)}
                 </td>
                 <td className="border-b py-3 px-4 text-gray-700 text-sm">
-                  {lead.last_modified_date
-                    ? lead.last_modified_date.replace('T', ' ').slice(0, 16)
-                    : 'NA'}
+                  {formatToIST(lead.last_modified_date)}
                 </td>
                 <td className="border-b py-3 px-4">
                   <span

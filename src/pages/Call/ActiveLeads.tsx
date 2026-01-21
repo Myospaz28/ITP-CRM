@@ -1434,21 +1434,20 @@ const ActiveLeads = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const formatDateTimeIST = (date: string | null) => {
-    if (!date) return 'NA';
+  const formatToIST = (utcDate) => {
+    if (!utcDate) return 'NA';
 
-    const utc = new Date(date);
-    const ist = new Date(utc.getTime() + 5.5 * 60 * 60 * 1000);
-
-    const y = ist.getFullYear();
-    const m = String(ist.getMonth() + 1).padStart(2, '0');
-    const d = String(ist.getDate()).padStart(2, '0');
-    const h = String(ist.getHours()).padStart(2, '0');
-    const min = String(ist.getMinutes()).padStart(2, '0');
-
-    return `${y}-${m}-${d} ${h}:${min}`;
+    return new Date(utcDate).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
   };
-
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -1810,7 +1809,7 @@ const ActiveLeads = () => {
                     {formatDate(lead.created_at)}
                   </td>
                   <td className="border-b py-3 px-4 dark:border-strokedark text-sm whitespace-nowrap">
-                    {formatDateTimeIST(lead.last_modified_date)}
+                    {formatToIST(lead.last_modified_date)}
                   </td>
                   <td className="border-b py-3 px-4 dark:border-strokedark flex gap-2">
                     <button
