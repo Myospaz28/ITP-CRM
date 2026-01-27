@@ -538,12 +538,31 @@ const TransferLeadsPopup: React.FC<Props> = ({
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState<string>('');
+  const [teamLeadUser, setTeamLeadUser] = useState<User | null>(null);
 
   /* 🔹 Fetch login user role */
+  // useEffect(() => {
+  //   axios
+  //     .get(`${BASE_URL}auth/get-role`, { withCredentials: true })
+  //     .then((res) => setUserRole(res.data.role))
+  //     .catch(() => console.error('Failed to fetch user role'));
+  // }, []);
+
   useEffect(() => {
     axios
       .get(`${BASE_URL}auth/get-role`, { withCredentials: true })
-      .then((res) => setUserRole(res.data.role))
+      .then((res) => {
+        setUserRole(res.data.role);
+
+        // ⭐ agar team lead hai to uska user object banao
+        if (res.data.role === 'team lead') {
+          setTeamLeadUser({
+            user_id: res.data.id,
+            name: res.data.username,
+            role: 'team lead',
+          });
+        }
+      })
       .catch(() => console.error('Failed to fetch user role'));
   }, []);
 
@@ -561,14 +580,32 @@ const TransferLeadsPopup: React.FC<Props> = ({
   };
 
   /* 🔹 Fetch ONLY team lead telecallers */
+  // const fetchMyTeleCallers = async () => {
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}api/team-lead/telecallers`, {
+  //       withCredentials: true,
+  //     });
+
+  //     // response already clean
+  //     setUsers(res.data || []);
+  //   } catch (error) {
+  //     console.error('Error fetching team telecallers', error);
+  //     setUsers([]);
+  //   }
+  // };
+
   const fetchMyTeleCallers = async () => {
     try {
       const res = await axios.get(`${BASE_URL}api/team-lead/telecallers`, {
         withCredentials: true,
       });
 
-      // response already clean
-      setUsers(res.data || []);
+      setUsers(() => {
+        const telecallers = res.data || [];
+
+        // ⭐ team lead + telecallers
+        return teamLeadUser ? [teamLeadUser, ...telecallers] : telecallers;
+      });
     } catch (error) {
       console.error('Error fetching team telecallers', error);
       setUsers([]);
@@ -576,18 +613,33 @@ const TransferLeadsPopup: React.FC<Props> = ({
   };
 
   /* 🔹 On popup open */
+  // useEffect(() => {
+  //   if (!show) return;
+
+  //   setSelectedUsers([]);
+  //   setSelectedRole('');
+
+  //   if (userRole === 'team lead') {
+  //     fetchMyTeleCallers(); // ⭐ ONLY OWN TELECALLERS
+  //   } else {
+  //     fetchAllUsers(); // ADMIN
+  //   }
+  // }, [show, userRole]);
+
   useEffect(() => {
     if (!show) return;
+    if (!userRole) return; // ⭐ role aane ka wait
+    if (userRole === 'team lead' && !teamLeadUser) return; // ⭐ TL ka wait
 
     setSelectedUsers([]);
     setSelectedRole('');
 
     if (userRole === 'team lead') {
-      fetchMyTeleCallers(); // ⭐ ONLY OWN TELECALLERS
+      fetchMyTeleCallers();
     } else {
-      fetchAllUsers(); // ADMIN
+      fetchAllUsers();
     }
-  }, [show, userRole]);
+  }, [show, userRole, teamLeadUser]);
 
   /* 🔹 Role based filtering (ADMIN ONLY) */
   const filteredUsers =
